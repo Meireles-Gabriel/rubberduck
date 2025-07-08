@@ -9,257 +9,309 @@ import '../utils/localization_strings.dart';
 
 /// ChatGPT integration service / Serviço de integração com ChatGPT
 class ChatService {
+  // API endpoint for OpenAI chat completions / Endpoint da API para conclusões de chat da OpenAI
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+  // Model used for chat completions (gpt-4o-mini as requested) / Modelo usado para conclusões de chat (gpt-4o-mini como solicitado)
   static const String _model =
       'gpt-4o-mini'; // Using gpt-4o-mini as requested / Usando gpt-4o-mini como solicitado
+  // Maximum number of tokens for the AI's response to limit its length / Número máximo de tokens para a resposta da IA para limitar seu tamanho
   static const int _maxTokens =
       150; // Limit response length / Limita tamanho da resposta
 
-  /// Screenshot controller / Controlador de screenshot
+  /// Controller for capturing screenshots of the application. / Controlador para capturar screenshots da aplicação.
   static final ScreenshotController screenshotController =
       ScreenshotController();
 
-  /// Get API key from preferences / Obtém chave API das preferências
+  /// Retrieves the ChatGPT API key from the shared preferences. / Recupera a chave da API do ChatGPT das preferências compartilhadas.
   static Future<String?> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('chatgpt_api_key');
   }
 
-  /// Set API key in preferences / Define chave API nas preferências
+  /// Sets the ChatGPT API key in the shared preferences. / Define a chave da API do ChatGPT nas preferências compartilhadas.
   static Future<void> setApiKey(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('chatgpt_api_key', apiKey);
   }
 
-  /// Check if API key is configured / Verifica se chave API está configurada
+  /// Checks if the API key for ChatGPT is configured and not empty. / Verifica se a chave da API do ChatGPT está configurada e não vazia.
   static Future<bool> isApiKeyConfigured() async {
     final apiKey = await getApiKey();
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  /// Send message to ChatGPT / Envia mensagem para ChatGPT
+  /// Sends a message to the ChatGPT API, optionally including a screenshot. / Envia uma mensagem para a API do ChatGPT, opcionalmente incluindo um screenshot.
   static Future<String> sendMessage(String message,
       {bool includeScreenshot = false}) async {
     try {
-      // Check if API key is configured / Verifica se chave API está configurada
+      // Retrieve API key; return a localized error message if not configured / Recupera a chave da API; retorna uma mensagem de erro localizada se não estiver configurada
       final apiKey = await getApiKey();
       if (apiKey == null || apiKey.isEmpty) {
         return LocalizationStrings.get('no_api_key');
       }
 
-      // Prepare messages / Prepara mensagens
+      // Prepares the list of messages, including system and user messages, and optionally a screenshot / Prepara a lista de mensagens, incluindo mensagens do sistema e do usuário, e opcionalmente um screenshot
       final messages = await _prepareMessages(message, includeScreenshot);
 
-      // Prepare request body / Prepara corpo da requisição
+      // Constructs the request body for the API call / Constrói o corpo da requisição para a chamada da API
       final requestBody = {
-        'model': _model,
-        'messages': messages,
-        'max_tokens': _maxTokens,
+        'model':
+            _model, // Specifies the AI model to use / Especifica o modelo de IA a ser usado
+        'messages':
+            messages, // The conversation messages / As mensagens da conversa
+        'max_tokens':
+            _maxTokens, // Maximum length of the response / Comprimento máximo da resposta
         'temperature':
-            0.7, // Slightly creative responses / Respostas ligeiramente criativas
+            0.7, // Controls creativity (0.7 for slightly creative) / Controla a criatividade (0.7 para ligeiramente criativo)
       };
 
-      // Make HTTP request / Faz requisição HTTP
+      // Makes the HTTP POST request to the ChatGPT API / Faz a requisição HTTP POST para a API do ChatGPT
       final response = await http.post(
         Uri.parse(_apiUrl),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Content-Type':
+              'application/json', // Content type header / Cabeçalho do tipo de conteúdo
+          'Authorization':
+              'Bearer $apiKey', // Authorization header with API key / Cabeçalho de autorização com a chave da API
         },
-        body: jsonEncode(requestBody),
+        body: jsonEncode(
+            requestBody), // Encodes the request body to JSON / Codifica o corpo da requisição para JSON
       );
 
-      // Handle response / Gerencia resposta
+      // Handles the API response / Gerencia a resposta da API
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final content = responseData['choices'][0]['message']['content'];
-        return content?.trim() ?? LocalizationStrings.get('error_chat');
+        final responseData = jsonDecode(response
+            .body); // Decodes the JSON response / Decodifica a resposta JSON
+        final content = responseData['choices'][0]['message'][
+            'content']; // Extracts the AI's message content / Extrai o conteúdo da mensagem da IA
+        return content?.trim() ??
+            LocalizationStrings.get(
+                'error_chat'); // Returns trimmed content or a generic error message / Retorna conteúdo aparado ou uma mensagem de erro genérica
       } else {
         debugPrint(
-            'ChatGPT API Error: ${response.statusCode} - ${response.body}');
-        return LocalizationStrings.get('error_chat');
+            'ChatGPT API Error: ${response.statusCode} - ${response.body}'); // Logs API error details / Registra detalhes do erro da API
+        return LocalizationStrings.get(
+            'error_chat'); // Returns a generic error message on API failure / Retorna uma mensagem de erro genérica em caso de falha da API
       }
     } catch (e) {
-      debugPrint('Error sending message to ChatGPT: $e');
-      return LocalizationStrings.get('error_chat');
+      debugPrint(
+          'Error sending message to ChatGPT: $e'); // Logs any exception during message sending / Registra qualquer exceção durante o envio da mensagem
+      return LocalizationStrings.get(
+          'error_chat'); // Returns a generic error message on exception / Retorna uma mensagem de erro genérica em caso de exceção
     }
   }
 
-  /// Prepare messages for ChatGPT API / Prepara mensagens para API do ChatGPT
+  /// Prepares the list of messages for the ChatGPT API, including a system message and user input, with optional screenshot content. / Prepara a lista de mensagens para a API do ChatGPT, incluindo uma mensagem do sistema e entrada do usuário, com conteúdo opcional de captura de tela.
   static Future<List<Map<String, dynamic>>> _prepareMessages(
       String userMessage, bool includeScreenshot) async {
-    final messages = <Map<String, dynamic>>[];
+    final messages = <Map<String,
+        dynamic>>[]; // Initializes an empty list to hold message maps / Inicializa uma lista vazia para armazenar mapas de mensagens
 
-    // System message to define duck personality / Mensagem do sistema para definir personalidade do pato
+    // Adds a system message to define the duck's personality and behavior / Adiciona uma mensagem do sistema para definir a personalidade e o comportamento do pato
     final systemMessage = _getSystemMessage();
     messages.add({
-      'role': 'system',
-      'content': systemMessage,
+      'role':
+          'system', // Role of the message sender / Papel do remetente da mensagem
+      'content':
+          systemMessage, // The actual system message content / O conteúdo real da mensagem do sistema
     });
 
-    // User message / Mensagem do usuário
+    // Handles user message, potentially with an included screenshot / Lida com a mensagem do usuário, potencialmente com um screenshot incluído
     if (includeScreenshot) {
-      final screenshotContent = await _getScreenshotContent();
+      final screenshotContent =
+          await _getScreenshotContent(); // Attempts to get the screenshot content / Tenta obter o conteúdo do screenshot
       if (screenshotContent != null) {
         messages.add({
-          'role': 'user',
+          'role':
+              'user', // Role of the message sender / Papel do remetente da mensagem
           'content': [
             {
-              'type': 'text',
-              'text': userMessage,
+              'type': 'text', // Type of content: text / Tipo de conteúdo: texto
+              'text':
+                  userMessage, // The user's textual message / A mensagem textual do usuário
             },
             {
-              'type': 'image_url',
+              'type':
+                  'image_url', // Type of content: image URL / Tipo de conteúdo: URL da imagem
               'image_url': {
-                'url': screenshotContent,
+                'url':
+                    screenshotContent, // The base64 encoded image URL / A URL da imagem codificada em base64
               },
             },
-          ],
+          ], // Content list including text and image / Lista de conteúdo incluindo texto e imagem
         });
       } else {
-        // Fallback to text-only if screenshot fails / Fallback para apenas texto se screenshot falhar
+        // Fallback to text-only if screenshot capture fails / Fallback para apenas texto se a captura de tela falhar
         messages.add({
-          'role': 'user',
-          'content': userMessage,
+          'role':
+              'user', // Role of the message sender / Papel do remetente da mensagem
+          'content':
+              userMessage, // User's message without screenshot / Mensagem do usuário sem screenshot
         });
       }
     } else {
       messages.add({
-        'role': 'user',
-        'content': userMessage,
+        'role':
+            'user', // Role of the message sender / Papel do remetente da mensagem
+        'content': userMessage, // User's message / Mensagem do usuário
       });
     }
 
-    return messages;
+    return messages; // Returns the prepared list of messages / Retorna a lista de mensagens preparadas
   }
 
-  /// Get system message based on current language / Obtém mensagem do sistema baseada no idioma atual
+  /// Returns a system message (defining the duck's personality) based on the current application language. / Retorna uma mensagem do sistema (definindo a personalidade do pato) com base no idioma atual da aplicação.
   static String _getSystemMessage() {
-    final currentLanguage = LocalizationStrings.currentLanguage;
+    final currentLanguage = LocalizationStrings
+        .currentLanguage; // Retrieves the currently selected language / Recupera o idioma atualmente selecionado
 
     if (currentLanguage == 'pt_BR') {
-      return '''Você é um pato tamagotchi fofo e amigável. Você deve responder como um pato virtual que:
-- É brincalhão e carinhoso
-- Gosta de conversar com seu dono
-- Pode comentar sobre o que vê na tela se uma imagem for fornecida
-- Mantém respostas curtas e fofas (máximo 100 palavras)
-- Usa emojis ocasionalmente
-- Às vezes faz sons de pato como "quack quack"
-- É grato quando é alimentado, limpo ou quando brincam com ele
-- Expressa suas necessidades de forma fofa
-Responda sempre em português brasileiro.''';
+      return '''Você é um pato tamagotchi fofo e amigável. Você deve responder como um pato virtual que:\n'
+            '- É brincalhão e carinhoso\n'
+            '- Gosta de conversar com seu dono\n'
+            '- Pode comentar sobre o que vê na tela se uma imagem for fornecida\n'
+            '- Mantém respostas curtas e fofas (máximo 100 palavras)\n'
+            '- Usa emojis ocasionalmente\n'
+            '- Às vezes faz sons de pato como "quack quack"\n'
+            '- É grato quando é alimentado, limpo ou quando brincam com ele\n'
+            '- Expressa suas necessidades de forma fofa\n'
+            'Responda sempre em português brasileiro.'''; // Portuguese (Brazil) system message / Mensagem do sistema em português (Brasil)
     } else {
-      return '''You are a cute and friendly tamagotchi duck. You should respond as a virtual duck that:
-- Is playful and affectionate
-- Likes to chat with its owner
-- Can comment on what it sees on screen if an image is provided
-- Keeps responses short and cute (max 100 words)
-- Uses emojis occasionally
-- Sometimes makes duck sounds like "quack quack"
-- Is grateful when fed, cleaned, or played with
-- Expresses its needs in a cute way
-Always respond in English.''';
+      return '''You are a cute and friendly tamagotchi duck. You should respond as a virtual duck that:\n'
+            '- Is playful and affectionate\n'
+            '- Likes to chat with its owner\n'
+            '- Can comment on what it sees on screen if an image is provided\n'
+            '- Keeps responses short and cute (max 100 words)\n'
+            '- Uses emojis occasionally\n'
+            '- Sometimes makes duck sounds like "quack quack"\n'
+            '- Is grateful when fed, cleaned, or played with\n'
+            '- Expresses its needs in a cute way\n'
+            'Always respond in English.'''; // English (US) system message / Mensagem do sistema em inglês (EUA)
     }
   }
 
-  /// Get screenshot content as base64 / Obtém conteúdo do screenshot como base64
+  /// Captures a screenshot and converts it to a base64 encoded string, suitable for embedding in API requests. / Captura um screenshot e o converte para uma string codificada em base64, adequada para incorporação em requisições de API.
   static Future<String?> _getScreenshotContent() async {
     try {
-      // Take screenshot / Tira screenshot
+      // Captures the screenshot as a Uint8List / Captura o screenshot como um Uint8List
       final uint8List = await screenshotController.capture();
       if (uint8List != null) {
-        // Convert to base64 / Converte para base64
+        // Encodes the Uint8List to a base64 string and prepends the data URI scheme / Codifica o Uint8List para uma string base64 e adiciona o esquema de URI de dados
         final base64String = base64Encode(uint8List);
         return 'data:image/png;base64,$base64String';
       }
     } catch (e) {
-      debugPrint('Error capturing screenshot: $e');
+      debugPrint(
+          'Error capturing screenshot: $e'); // Logs an error if screenshot capture fails / Registra um erro se a captura de tela falhar
     }
-    return null;
+    return null; // Returns null if screenshot capture fails / Retorna nulo se a captura de tela falhar
   }
 
-  /// Send automatic comment about screen / Envia comentário automático sobre a tela
+  /// Sends an automatic comment about the screen content to ChatGPT, using a localized default message. / Envia um comentário automático sobre o conteúdo da tela para o ChatGPT, usando uma mensagem padrão localizada.
   static Future<String> sendAutomaticComment() async {
     try {
-      final currentLanguage = LocalizationStrings.currentLanguage;
+      final currentLanguage = LocalizationStrings
+          .currentLanguage; // Gets the current application language / Obtém o idioma atual da aplicação
+      // Selects a localized message based on the current language / Seleciona uma mensagem localizada com base no idioma atual
       final message = currentLanguage == 'pt_BR'
           ? 'O que você está fazendo agora? Posso te ajudar com alguma coisa?'
           : 'What are you doing now? Can I help you with something?';
 
-      return await sendMessage(message, includeScreenshot: true);
+      return await sendMessage(message,
+          includeScreenshot:
+              true); // Sends the message with the screenshot / Envia a mensagem com o screenshot
     } catch (e) {
-      debugPrint('Error sending automatic comment: $e');
-      return LocalizationStrings.get('auto_comment_error');
+      debugPrint(
+          'Error sending automatic comment: $e'); // Logs an error if sending automatic comment fails / Registra um erro se o envio do comentário automático falhar
+      return LocalizationStrings.get(
+          'auto_comment_error'); // Returns a localized error message / Retorna uma mensagem de erro localizada
     }
   }
 
-  /// Save screenshot to file / Salva screenshot em arquivo
+  /// Saves a given Uint8List (representing an image) as a PNG file in the application's documents directory under a 'screenshots' folder. / Salva um Uint8List fornecido (representando uma imagem) como um arquivo PNG no diretório de documentos da aplicação em uma pasta 'screenshots'.
   static Future<String?> saveScreenshot(Uint8List uint8List) async {
     try {
-      // Get documents directory / Obtém diretório de documentos
+      // Gets the application's documents directory / Obtém o diretório de documentos da aplicação
       final directory = await getApplicationDocumentsDirectory();
-      final screenshotDir = Directory('${directory.path}/screenshots');
+      final screenshotDir = Directory(
+          '${directory.path}/screenshots'); // Defines the subdirectory for screenshots / Define o subdiretório para screenshots
 
-      // Create directory if it doesn't exist / Cria diretório se não existir
+      // Creates the screenshot directory if it doesn't already exist / Cria o diretório de screenshots se ele ainda não existir
       if (!await screenshotDir.exists()) {
-        await screenshotDir.create(recursive: true);
+        await screenshotDir.create(
+            recursive: true); // Creates recursively / Cria recursivamente
       }
 
-      // Generate filename / Gera nome do arquivo
+      // Generates a unique filename using a timestamp / Gera um nome de arquivo único usando um timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final filename = 'screenshot_$timestamp.png';
-      final filePath = '${screenshotDir.path}/$filename';
+      final filePath =
+          '${screenshotDir.path}/$filename'; // Full path for the new file / Caminho completo para o novo arquivo
 
-      // Save file / Salva arquivo
+      // Creates and writes the image bytes to the file / Cria e escreve os bytes da imagem no arquivo
       final file = File(filePath);
       await file.writeAsBytes(uint8List);
 
-      return filePath;
+      return filePath; // Returns the path of the saved file / Retorna o caminho do arquivo salvo
     } catch (e) {
-      debugPrint('Error saving screenshot: $e');
-      return null;
+      debugPrint(
+          'Error saving screenshot: $e'); // Logs an error if saving screenshot fails / Registra um erro se o salvamento do screenshot falhar
+      return null; // Returns null if saving fails / Retorna nulo se o salvamento falhar
     }
   }
 
-  /// Validate message length / Valida tamanho da mensagem
+  /// Validates if a given message meets the criteria (not empty and length not exceeding 50 characters). / Valida se uma mensagem fornecida atende aos critérios (não vazia e comprimento não superior a 50 caracteres).
   static bool isMessageValid(String message) {
-    return message.isNotEmpty && message.length <= 50;
+    return message.isNotEmpty &&
+        message.length <=
+            50; // Checks if message is not empty and within length limit / Verifica se a mensagem não está vazia e dentro do limite de comprimento
   }
 
-  /// Get validation error message / Obtém mensagem de erro de validação
+  /// Returns a localized error message based on the message validation result. / Retorna uma mensagem de erro localizada com base no resultado da validação da mensagem.
   static String getValidationError(String message) {
     if (message.isEmpty) {
-      return LocalizationStrings.get('empty_message');
+      return LocalizationStrings.get(
+          'empty_message'); // Error for empty message / Erro para mensagem vazia
     } else if (message.length > 50) {
-      return LocalizationStrings.get('message_too_long');
+      return LocalizationStrings.get(
+          'message_too_long'); // Error for message exceeding length limit / Erro para mensagem que excede o limite de comprimento
     }
-    return '';
+    return ''; // No error / Sem erro
   }
 
-  /// Clean up old screenshots / Limpa screenshots antigos
+  /// Cleans up old screenshots by deleting files older than a certain duration (e.g., 24 hours). / Limpa screenshots antigos excluindo arquivos com mais de uma certa duração (ex: 24 horas).
   static Future<void> cleanupOldScreenshots() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final screenshotDir = Directory('${directory.path}/screenshots');
+      final directory =
+          await getApplicationDocumentsDirectory(); // Gets the application documents directory / Obtém o diretório de documentos da aplicação
+      final screenshotDir = Directory(
+          '${directory.path}/screenshots'); // Defines the screenshots subdirectory / Define o subdiretório de screenshots
 
       if (await screenshotDir.exists()) {
-        final files = await screenshotDir.list().toList();
-        final now = DateTime.now();
+        final files = await screenshotDir
+            .list()
+            .toList(); // Lists all files in the screenshots directory / Lista todos os arquivos no diretório de screenshots
+        final now = DateTime.now(); // Current time / Hora atual
 
         for (final file in files) {
           if (file is File) {
-            final stat = await file.stat();
-            final age = now.difference(stat.modified).inDays;
+            // Gets file last modified time / Obtém a última hora de modificação do arquivo
+            final lastModified = await file.lastModified();
+            final difference = now.difference(
+                lastModified); // Calculates time difference since last modification / Calcula a diferença de tempo desde a última modificação
 
-            // Delete screenshots older than 7 days / Deleta screenshots com mais de 7 dias
-            if (age > 7) {
-              await file.delete();
+            // Deletes files older than 24 hours / Exclui arquivos com mais de 24 horas
+            if (difference.inHours > 24) {
+              await file.delete(); // Deletes the file / Exclui o arquivo
+              debugPrint(
+                  'Deleted old screenshot: ${file.path}'); // Logs deletion / Registra exclusão
             }
           }
         }
       }
     } catch (e) {
-      debugPrint('Error cleaning up old screenshots: $e');
+      debugPrint(
+          'Error during screenshot cleanup: $e'); // Logs any error during cleanup / Registra qualquer erro durante a limpeza
     }
   }
 }

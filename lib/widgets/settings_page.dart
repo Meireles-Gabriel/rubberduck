@@ -11,11 +11,12 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
+/// State class for the SettingsPage / Classe de estado para a SettingsPage
 class _SettingsPageState extends State<SettingsPage> {
-  // Controllers / Controladores
+  // Controller for the API key text field / Controlador para o campo de texto da chave API
   final TextEditingController _apiKeyController = TextEditingController();
 
-  // State variables / Variáveis de estado
+  // State variables for managing UI and settings / Variáveis de estado para gerenciar a UI e as configurações
   bool _isEnglish = true;
   bool _isLoading = false;
   bool _apiKeyVisible = false;
@@ -24,16 +25,22 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    // Load settings when the widget initializes / Carrega as configurações quando o widget inicializa
     _loadSettings();
   }
 
   @override
   void dispose() {
+    // Dispose of the API key controller when the widget is removed / Descarta o controlador da chave API quando o widget é removido
     _apiKeyController.dispose();
     super.dispose();
   }
 
-  /// Load settings from preferences / Carrega configurações das preferências
+  /// Loads application settings from shared preferences, including language and API key.
+  /// It also checks the status of the loaded API key.
+  ///
+  /// Carrega as configurações do aplicativo das preferências compartilhadas, incluindo idioma e chave API.
+  /// Também verifica o status da chave API carregada.
   Future<void> _loadSettings() async {
     setState(() {
       _isLoading = true;
@@ -42,15 +49,15 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Load language setting / Carrega configuração de idioma
+      // Retrieve and set language preference / Recupera e define a preferência de idioma
       final language = prefs.getString('language') ?? 'en_US';
       _isEnglish = language == 'en_US';
 
-      // Load API key / Carrega chave API
+      // Retrieve and set API key / Recupera e define a chave API
       final apiKey = prefs.getString('chatgpt_api_key') ?? '';
       _apiKeyController.text = apiKey;
 
-      // Check API key status / Verifica status da chave API
+      // Check the status of the retrieved API key / Verifica o status da chave API recuperada
       await _checkApiKeyStatus();
     } catch (e) {
       debugPrint('Error loading settings: $e');
@@ -61,7 +68,11 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// Save settings to preferences / Salva configurações nas preferências
+  /// Saves current application settings to shared preferences, including language and API key.
+  /// Displays a success or error message to the user.
+  ///
+  /// Salva as configurações atuais do aplicativo nas preferências compartilhadas, incluindo idioma e chave API.
+  /// Exibe uma mensagem de sucesso ou erro para o usuário.
   Future<void> _saveSettings() async {
     setState(() {
       _isLoading = true;
@@ -70,18 +81,18 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Save language setting / Salva configuração de idioma
+      // Determine and save the selected language / Determina e salva o idioma selecionado
       final language = _isEnglish ? 'en_US' : 'pt_BR';
       await prefs.setString('language', language);
       await LocalizationStrings.setLanguage(language);
 
-      // Save API key / Salva chave API
+      // Save the API key using ChatService / Salva a chave API usando ChatService
       await ChatService.setApiKey(_apiKeyController.text.trim());
 
-      // Check API key status / Verifica status da chave API
+      // Re-check API key status after saving / Verifica novamente o status da chave API após salvar
       await _checkApiKeyStatus();
 
-      // Show success message / Mostra mensagem de sucesso
+      // Show success snackbar / Mostra snackbar de sucesso
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -94,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('Error saving settings: $e');
 
-      // Show error message / Mostra mensagem de erro
+      // Show error snackbar / Mostra snackbar de erro
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -111,7 +122,11 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// Check API key status / Verifica status da chave API
+  /// Checks the validity and status of the entered API key.
+  /// Updates [_apiKeyStatus] based on whether the key is configured or has an invalid format.
+  ///
+  /// Verifica a validade e o status da chave API inserida.
+  /// Atualiza [_apiKeyStatus] com base em se a chave está configurada ou tem um formato inválido.
   Future<void> _checkApiKeyStatus() async {
     final apiKey = _apiKeyController.text.trim();
 
@@ -124,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
 
-    // Basic validation / Validação básica
+    // Basic validation for API key format / Validação básica para o formato da chave API
     if (apiKey.startsWith('sk-') && apiKey.length > 20) {
       setState(() {
         _apiKeyStatus = LocalizationStrings.currentLanguage == 'pt_BR'
@@ -143,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white.withValues(alpha: 0.95),
+      backgroundColor: Colors.white.withOpacity(0.95),
       appBar: AppBar(
         title: Text(
           LocalizationStrings.get('settings_title'),
@@ -156,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // Close button / Botão de fechar
+          // Button to close the settings page / Botão para fechar a página de configurações
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.close),
@@ -173,17 +188,17 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Language settings section / Seção de configurações de idioma
+                  // Section for language settings / Seção para configurações de idioma
                   _buildLanguageSection(),
 
                   const SizedBox(height: 24),
 
-                  // API key settings section / Seção de configurações da chave API
+                  // Section for API key settings / Seção para configurações da chave API
                   _buildApiKeySection(),
 
                   const SizedBox(height: 32),
 
-                  // Save and close buttons / Botões de salvar e fechar
+                  // Section for save and close action buttons / Seção para botões de ação de salvar e fechar
                   _buildActionButtons(),
                 ],
               ),
@@ -191,7 +206,11 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Build language settings section / Constrói seção de configurações de idioma
+  /// Builds the language selection section in the settings page.
+  /// Allows users to toggle between English and Portuguese.
+  ///
+  /// Constrói a seção de seleção de idioma na página de configurações.
+  /// Permite aos usuários alternar entre inglês e português.
   Widget _buildLanguageSection() {
     return Card(
       elevation: 4,
@@ -203,7 +222,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section title / Título da seção
+            // Row containing the language icon and title / Linha contendo o ícone do idioma e o título
             Row(
               children: [
                 Icon(
@@ -224,7 +243,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 16),
 
-            // Language toggle / Alternador de idioma
+            // Row for language toggle switch / Linha para o interruptor de alternância de idioma
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -239,10 +258,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 Switch(
                   value:
-                      !_isEnglish, // Switched logic for PT/EN / Lógica invertida para PT/EN
+                      !_isEnglish, // Inverted logic: true for Portuguese, false for English / Lógica invertida: true para Português, false para Inglês
                   onChanged: (value) {
                     setState(() {
-                      _isEnglish = !value;
+                      _isEnglish =
+                          !value; // Toggle language state / Alterna o estado do idioma
                     });
                   },
                   activeColor: Colors.green,
@@ -251,7 +271,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
 
-            // Language description / Descrição do idioma
+            // Display of the currently selected language / Exibição do idioma atualmente selecionado
             Text(
               _isEnglish ? 'English (US)' : 'Português (Brasil)',
               style: TextStyle(
@@ -265,7 +285,11 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Build API key settings section / Constrói seção de configurações da chave API
+  /// Builds the API key input section in the settings page.
+  /// Allows users to enter their OpenAI API key and view its status.
+  ///
+  /// Constrói a seção de entrada da chave API na página de configurações.
+  /// Permite aos usuários inserir sua chave API OpenAI e visualizar seu status.
   Widget _buildApiKeySection() {
     return Card(
       elevation: 4,
@@ -277,7 +301,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section title / Título da seção
+            // Row containing the API key icon and title / Linha contendo o ícone da chave API e o título
             Row(
               children: [
                 Icon(
@@ -298,12 +322,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 16),
 
-            // API key input field / Campo de entrada da chave API
+            // Text field for API key input / Campo de texto para entrada da chave API
             TextField(
               controller: _apiKeyController,
-              obscureText: !_apiKeyVisible,
+              obscureText:
+                  !_apiKeyVisible, // Toggles visibility of the API key / Alterna a visibilidade da chave API
               onChanged: (value) {
-                _checkApiKeyStatus();
+                _checkApiKeyStatus(); // Re-check status on change / Verifica o status na mudança
               },
               decoration: InputDecoration(
                 hintText: LocalizationStrings.get('api_key_hint'),
@@ -313,7 +338,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() {
-                      _apiKeyVisible = !_apiKeyVisible;
+                      _apiKeyVisible =
+                          !_apiKeyVisible; // Toggle API key visibility / Alterna a visibilidade da chave API
                     });
                   },
                   icon: Icon(
@@ -325,7 +351,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 8),
 
-            // API key status / Status da chave API
+            // Display area for API key status message / Área de exibição para mensagem de status da chave API
             if (_apiKeyStatus.isNotEmpty)
               Row(
                 children: [
@@ -356,7 +382,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 12),
 
-            // API key help text / Texto de ajuda da chave API
+            // Help text for obtaining the API key / Texto de ajuda para obter a chave API
             Text(
               LocalizationStrings.currentLanguage == 'pt_BR'
                   ? 'Você pode obter sua chave API em https://platform.openai.com/api-keys'
@@ -372,11 +398,13 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Build action buttons / Constrói botões de ação
+  /// Builds the action buttons section, including Save and Close buttons.
+  ///
+  /// Constrói a seção de botões de ação, incluindo os botões Salvar e Fechar.
   Widget _buildActionButtons() {
     return Column(
       children: [
-        // Save button / Botão de salvar
+        // Save settings button / Botão de salvar configurações
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -417,7 +445,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
         const SizedBox(height: 12),
 
-        // Close button / Botão de fechar
+        // Close settings button / Botão de fechar configurações
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(

@@ -20,9 +20,10 @@ void main() async {
   String defaultLanguage =
       (systemLocale?.startsWith('pt') ?? false) ? 'pt_BR' : 'en_US';
 
-  // Save default language if not already set / Salva idioma padrão se não estiver definido
+  // Get shared preferences instance / Obtém a instância de shared preferences
   SharedPreferences prefs = await SharedPreferences.getInstance();
   if (!prefs.containsKey('language')) {
+    // Save default language if not already set / Salva idioma padrão se não estiver definido
     await prefs.setString('language', defaultLanguage);
   }
 
@@ -46,8 +47,8 @@ void main() async {
 
   // Apply window configuration / Aplica configuração da janela
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
+    await windowManager.show(); // Show the window / Mostra a janela
+    await windowManager.focus(); // Focus the window / Foca a janela
     await windowManager
         .setAsFrameless(); // Remove window frame / Remove moldura da janela
     await windowManager
@@ -61,14 +62,20 @@ void main() async {
 
   // Configure bitsdojo window / Configura janela bitsdojo
   doWhenWindowReady(() {
-    final win = appWindow;
-    const initialSize = Size(400, 500);
-    win.minSize = const Size(350, 450);
-    win.maxSize = const Size(450, 550);
-    win.size = initialSize;
-    win.alignment = Alignment.centerRight;
-    win.title = "Tamagotchi Duck";
-    win.show();
+    final win =
+        appWindow; // Get the app window instance / Obtém a instância da janela do aplicativo
+    const initialSize =
+        Size(400, 500); // Initial window size / Tamanho inicial da janela
+    win.minSize =
+        const Size(350, 450); // Minimum window size / Tamanho mínimo da janela
+    win.maxSize =
+        const Size(450, 550); // Maximum window size / Tamanho máximo da janela
+    win.size = initialSize; // Set initial size / Define o tamanho inicial
+    win.alignment = Alignment
+        .centerRight; // Align window to center right / Alinha a janela ao centro-direita
+    win.title =
+        "Tamagotchi Duck"; // Set window title / Define o título da janela
+    win.show(); // Show the bitsdojo window / Mostra a janela bitsdojo
   });
 }
 
@@ -78,27 +85,38 @@ class TamagotchiDuckApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Returns the MaterialApp widget / Retorna o widget MaterialApp
     return MaterialApp(
-      title: 'Tamagotchi Duck',
+      title: 'Tamagotchi Duck', // Application title / Título da aplicação
       debugShowCheckedModeBanner:
           false, // Hide debug banner / Esconder banner de debug
+      // Define the application theme / Define o tema da aplicação
       theme: ThemeData(
+        // Define the color scheme / Define o esquema de cores
         colorScheme:
             ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
           secondary: Colors.blueAccent, // Use a suitable accent color if needed
         ),
         // Custom theme for the widget / Tema customizado para o widget
-        scaffoldBackgroundColor: Colors.transparent,
+        scaffoldBackgroundColor: Colors
+            .transparent, // Transparent scaffold background / Fundo transparente do scaffold
+        // Dialog theme / Tema do diálogo
         dialogTheme: DialogThemeData(
             backgroundColor: Colors.white.withValues(alpha: 0.95)),
+        // Card theme / Tema do cartão
         cardTheme: CardThemeData(color: Colors.white.withValues(alpha: 0.9)),
+        // Text theme / Tema do texto
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.black87),
-          bodySmall: TextStyle(color: Colors.black54),
+          bodyMedium: TextStyle(
+              color: Colors
+                  .black87), // Medium body text style / Estilo de texto médio do corpo
+          bodySmall: TextStyle(
+              color: Colors
+                  .black54), // Small body text style / Estilo de texto pequeno do corpo
         ),
       ),
       home: const TamagotchiWidget(), // Main widget / Widget principal
-      // Remove default material banner / Remove banner padrão do material
+      // Builder for custom app container / Construtor para container customizado do aplicativo
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
@@ -109,15 +127,19 @@ class TamagotchiDuckApp extends StatelessWidget {
             // Shadow effect / Efeito de sombra
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: Colors.black
+                    .withValues(alpha: 0.2), // Shadow color / Cor da sombra
+                blurRadius: 10, // Blur radius / Raio do desfoque
+                offset: const Offset(
+                    0, 5), // Offset of the shadow / Deslocamento da sombra
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: child,
+            // Clip rectangular widget / Widget para cortar retângulo
+            borderRadius: BorderRadius.circular(
+                15), // Border radius for clipping / Raio da borda para corte
+            child: child, // Child widget / Widget filho
           ),
         );
       },
