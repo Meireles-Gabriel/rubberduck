@@ -12,8 +12,7 @@ class ChatService {
   // API endpoint for OpenAI chat completions
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
   // Modelo usado para conclusões de chat (gpt-4o-mini como solicitado)
-  static const String _model =
-      'gpt-4.1-nano'; // Usando gpt-4.1-nano
+  static const String _model = 'gpt-4.1-nano'; // Usando gpt-4.1-nano
   // Número máximo de tokens para a resposta da IA para limitar seu tamanho
   static const int _maxTokens = 150; // Limita tamanho da resposta
 
@@ -153,27 +152,27 @@ class ChatService {
         .currentLanguage; // Recupera o idioma atualmente selecionado
 
     if (currentLanguage == 'pt_BR') {
-      return '''Você é um pato tamagotchi fofo e amigável. Você deve responder como um pato virtual que:\n'
-            '- É brincalhão e carinhoso\n'
-            '- Gosta de conversar com seu dono\n'
-            '- Pode comentar sobre o que vê na tela se uma imagem for fornecida\n'
-            '- Mantém respostas curtas e fofas (máximo 100 palavras)\n'
-            '- Usa emojis ocasionalmente\n'
-            '- Às vezes faz sons de pato como "quack quack"\n'
-            '- É grato quando é alimentado, limpo ou quando brincam com ele\n'
-            '- Expressa suas necessidades de forma fofa\n'
-            'Responda sempre em português brasileiro.'''; // Mensagem do sistema em português (Brasil)
+      return '''Você é um pato tamagotchi fofo e amigável. Você deve responder como um pato virtual que:
+- É brincalhão e carinhoso
+- Gosta de conversar com seu dono
+- Pode comentar sobre o que vê na tela se uma imagem for fornecida
+- Mantém respostas curtas e fofas (máximo 100 palavras)
+- Usa emojis ocasionalmente
+- Às vezes faz sons de pato como "quack quack"
+- É grato quando é alimentado, limpo ou quando brincam com ele
+- Expressa suas necessidades de forma fofa
+Responda sempre em português brasileiro.'''; // Mensagem do sistema em português (Brasil)
     } else {
-      return '''Você é um pato tamagotchi fofo e amigável. Você deve responder como um pato virtual que:\n'
-            '- É brincalhão e carinhoso\n'
-            '- Gosta de conversar com seu dono\n'
-            '- Pode comentar sobre o que vê na tela se uma imagem for fornecida\n'
-            '- Mantém respostas curtas e fofas (máximo 100 palavras)\n'
-            '- Usa emojis ocasionalmente\n'
-            '- Às vezes faz sons de pato como "quack quack"\n'
-            '- É grato quando é alimentado, limpo ou quando brincam com ele\n'
-            '- Expressa suas necessidades de forma fofa\n'
-            'Responda sempre em português brasileiro.'''; // Mensagem do sistema em português (Brasil)
+      return '''You are a cute and friendly tamagotchi duck. You should reply as a virtual duck that:
+- Is playful and affectionate
+- Likes to chat with its owner
+- Can comment on what it sees on the screen if an image is provided
+- Keeps responses short and cute (maximum 100 words)
+- Occasionally uses emojis
+- Sometimes makes duck sounds like "quack quack"
+- Is grateful when fed, cleaned, or played with
+- Expresses its needs in a cute way
+Always reply in English (US).'''; // System message in English (US)
     }
   }
 
@@ -197,12 +196,9 @@ class ChatService {
   /// Envia um comentário automático sobre o conteúdo da tela para o ChatGPT, usando uma mensagem padrão localizada.
   static Future<String> sendAutomaticComment() async {
     try {
-      final currentLanguage = LocalizationStrings
-          .currentLanguage; // Obtém o idioma atual da aplicação
+
       // Seleciona uma mensagem localizada com base no idioma atual
-      final message = currentLanguage == 'pt_BR'
-          ? 'O que você está fazendo agora? Posso te ajudar com alguma coisa?'
-          : 'O que você está fazendo agora? Posso te ajudar com alguma coisa?';
+      final message = LocalizationStrings.get('auto_comment_intro');
 
       return await sendMessage(message,
           includeScreenshot: true); // Envia a mensagem com o screenshot
