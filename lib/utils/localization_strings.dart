@@ -60,6 +60,12 @@ class LocalizationStrings {
       'revive': 'Reviver', // Texto para o botão reviver
       'death_title': 'Oh não!', // Título para o diálogo de morte
 
+      // Explicações de morte
+      'explanation_hunger': 'Não foi alimentado por mais de 24 horas.',
+      'explanation_dirty': 'Não foi limpo por mais de 24 horas.',
+      'explanation_sadness': 'Não brincou por mais de 24 horas.',
+      'explanation_adequate_care': 'Não recebeu cuidados adequados.',
+
       // Strings da tela de configurações
       'settings_title': 'Configurações', // Título da tela de configurações
       'language': 'Idioma', // Rótulo para seleção de idioma
@@ -98,6 +104,16 @@ class LocalizationStrings {
           'Mensagem muito longa! Máx 50 caracteres.', // Erro de validação para mensagens longas
       'empty_message':
           'Por favor, digite algo primeiro!', // Erro de validação para mensagens vazias
+
+      // Strings de aviso de morte
+      'warning_title': 'Aviso Urgente!',
+      'warning_hunger':
+          'Estou com muita fome! Por favor, me alimente logo ou posso morrer!',
+      'warning_dirty':
+          'Estou muito sujo! Por favor, me limpe logo ou posso morrer!',
+      'warning_sadness':
+          'Estou muito triste! Por favor, brinque comigo logo ou posso morrer!',
+      'understand': 'Entendi',
     },
     'en_US': {
       // Main interface strings
@@ -122,6 +138,12 @@ class LocalizationStrings {
       'died_sadness': 'I died of sadness... 😵',
       'revive': 'Revive',
       'death_title': 'Oh no!',
+
+      // Death explanations
+      'explanation_hunger': 'Wasn\'t fed for over 24 hours.',
+      'explanation_dirty': 'Wasn\'t cleaned for over 24 hours.',
+      'explanation_sadness': 'Didn\'t play for over 24 hours.',
+      'explanation_adequate_care': 'Didn\'t receive adequate care.',
 
       // Settings screen strings
       'settings_title': 'Settings',
@@ -151,6 +173,14 @@ class LocalizationStrings {
       // Validation messages
       'message_too_long': 'Message too long! Max 50 characters.',
       'empty_message': 'Please type something first!',
+
+      // Death warning strings
+      'warning_title': 'Urgent Warning!',
+      'warning_hunger': 'I\'m very hungry! Please feed me soon or I might die!',
+      'warning_dirty': 'I\'m very dirty! Please clean me soon or I might die!',
+      'warning_sadness':
+          'I\'m very sad! Please play with me soon or I might die!',
+      'understand': 'Got it',
     }
   };
 }

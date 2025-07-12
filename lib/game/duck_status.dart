@@ -215,14 +215,17 @@ class DuckStatus {
 
   /// Retorna uma string indicando qual necessidade específica (fome, sujeira, tristeza) requer atenção urgente, ou nulo se nenhuma.
   String? getAttentionMessage() {
-    if (isDead)
+    if (isDead) {
       return null; // Um pato morto não precisa de mensagens de atenção
+    }
 
     if (hunger < 20) return 'hungry'; // Retorna 'hungry' se a fome for crítica
-    if (cleanliness < 20)
+    if (cleanliness < 20) {
       return 'dirty'; // Retorna 'dirty' se a limpeza for crítica
-    if (happiness < 20)
+    }
+    if (happiness < 20) {
       return 'sad'; // Retorna 'sad' se a felicidade for crítica
+    }
 
     return null; // Retorna nulo se nenhuma atenção crítica for necessária
   }
@@ -234,12 +237,15 @@ class DuckStatus {
     final averageStatus =
         (hunger + cleanliness + happiness) / 3; // Calcula o status médio
 
-    if (averageStatus > 70)
+    if (averageStatus > 70) {
       return 'happy'; // Retorna 'happy' para status médio alto
-    if (averageStatus > 40)
+    }
+    if (averageStatus > 40) {
       return 'neutral'; // Retorna 'neutral' para status médio
-    if (averageStatus > 20)
+    }
+    if (averageStatus > 20) {
       return 'sad'; // Retorna 'sad' para status médio baixo
+    }
     return 'critical'; // Retorna 'critical' para status médio muito baixo
   }
 

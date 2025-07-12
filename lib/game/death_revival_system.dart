@@ -125,26 +125,15 @@ class DeathRevivalSystem {
 
   /// Fornece uma explicação localizada para a morte do pato com base na causa fornecida.
   static String _getDeathExplanation(String? cause) {
-    final currentLanguage = LocalizationStrings
-        .currentLanguage; // Recupera o idioma atual da aplicação
-
     switch (cause) {
       case 'hunger':
-        return currentLanguage == 'pt_BR'
-            ? 'Não foi alimentado por mais de 24 horas.'
-            : 'Não foi alimentado por mais de 24 horas.';
+        return LocalizationStrings.get('explanation_hunger');
       case 'dirty':
-        return currentLanguage == 'pt_BR'
-            ? 'Não foi limpo por mais de 24 horas.'
-            : 'Não foi limpo por mais de 24 horas.';
+        return LocalizationStrings.get('explanation_dirty');
       case 'sadness':
-        return currentLanguage == 'pt_BR'
-            ? 'Não brincou por mais de 24 horas.'
-            : 'Não brincou por mais de 24 horas.';
+        return LocalizationStrings.get('explanation_sadness');
       default:
-        return currentLanguage == 'pt_BR'
-            ? 'Não recebeu cuidados adequados.'
-            : 'Não recebeu cuidados adequados.';
+        return LocalizationStrings.get('explanation_adequate_care');
     }
   }
 
@@ -188,22 +177,14 @@ class DeathRevivalSystem {
   static Future<void> showDeathWarning(
       BuildContext context, DuckStatus duckStatus) async {
     String warningMessage; // Mensagem a ser exibida no diálogo de aviso
-    final currentLanguage = LocalizationStrings
-        .currentLanguage; // Recupera o idioma atual da aplicação
 
     // Determina a mensagem de aviso específica com base em qual necessidade é crítica
     if (duckStatus.hunger < 20) {
-      warningMessage = currentLanguage == 'pt_BR'
-          ? 'Estou com muita fome! Por favor, me alimente logo ou posso morrer!'
-          : 'Estou com muita fome! Por favor, me alimente logo ou posso morrer!';
+      warningMessage = LocalizationStrings.get('warning_hunger');
     } else if (duckStatus.cleanliness < 20) {
-      warningMessage = currentLanguage == 'pt_BR'
-          ? 'Estou muito sujo! Por favor, me limpe logo ou posso morrer!'
-          : 'Estou muito sujo! Por favor, me limpe logo ou posso morrer!';
+      warningMessage = LocalizationStrings.get('warning_dirty');
     } else {
-      warningMessage = currentLanguage == 'pt_BR'
-          ? 'Estou muito triste! Por favor, brinque comigo logo ou posso morrer!'
-          : 'Estou muito triste! Por favor, brinque comigo logo ou posso morrer!';
+      warningMessage = LocalizationStrings.get('warning_sadness');
     }
 
     await showDialog(
@@ -211,9 +192,8 @@ class DeathRevivalSystem {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
-            currentLanguage == 'pt_BR'
-                ? 'Aviso Urgente!'
-                : 'Aviso Urgente!', // Título do diálogo de aviso
+            LocalizationStrings.get(
+                'warning_title'), // Título do diálogo de aviso
             style: const TextStyle(
               fontSize: 20, // Tamanho da fonte para o título do aviso
               fontWeight:
@@ -243,9 +223,8 @@ class DeathRevivalSystem {
               onPressed: () => Navigator.of(context)
                   .pop(), // Fecha o diálogo ao ser pressionado
               child: Text(
-                currentLanguage == 'pt_BR'
-                    ? 'Entendi'
-                    : 'Entendi', // Texto para o botão de entendimento
+                LocalizationStrings.get(
+                    'understand'), // Texto para o botão de entendimento
                 style: const TextStyle(
                   fontSize: 16, // Tamanho da fonte para o texto do botão
                   fontWeight:
