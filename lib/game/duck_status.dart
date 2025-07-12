@@ -97,8 +97,9 @@ class DuckStatus {
 
   /// Atualiza os níveis de fome, limpeza e felicidade do pato com base no tempo decorrido desde a última atualização.
   Future<void> updateStatus() async {
-    if (isDead)
+    if (isDead) {
       return; // Se o pato estiver morto, nenhuma atualização de status é necessária
+    }
 
     final now = DateTime.now(); // Timestamp atual
     // Calcula as horas decorridas desde a última atualização
