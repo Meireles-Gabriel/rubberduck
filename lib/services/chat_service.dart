@@ -9,6 +9,9 @@ import '../utils/localization_strings.dart';
 
 /// Serviço de integração com ChatGPT
 class ChatService {
+  // Callback para notificar o jogo para reproduzir uma animação específica
+  static Function(String)? onPlayAnimation;
+
   // API endpoint for OpenAI chat completions
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
   // Modelo usado para conclusões de chat (gpt-4o-mini como solicitado)
@@ -78,6 +81,8 @@ class ChatService {
             jsonDecode(response.body); // Decodifica a resposta JSON
         final content = responseData['choices'][0]['message']
             ['content']; // Extrai o conteúdo da mensagem da IA
+        onPlayAnimation
+            ?.call('talk'); // Aciona a animação de "fala" quando a IA responde
         return content?.trim() ??
             LocalizationStrings.get(
                 'error_chat'); // Retorna conteúdo aparado ou uma mensagem de erro genérica
@@ -196,7 +201,6 @@ Always reply in English (US).'''; // System message in English (US)
   /// Envia um comentário automático sobre o conteúdo da tela para o ChatGPT, usando uma mensagem padrão localizada.
   static Future<String> sendAutomaticComment() async {
     try {
-
       // Seleciona uma mensagem localizada com base no idioma atual
       final message = LocalizationStrings.get('auto_comment_intro');
 

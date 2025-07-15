@@ -25,6 +25,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   late DuckGame duckGame;
   late DuckStatus duckStatus;
   late PeriodicTasksManager periodicTasks;
+  bool _isInitialized = false;
 
   // Controladores para entrada de texto e captura de tela
   final TextEditingController _chatController = TextEditingController();
@@ -92,6 +93,13 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
 
     // Realiza verificação de status inicial
     _checkInitialStatus();
+
+    // Marca como inicializado
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
   }
 
   /// Verifica o status inicial do pato na inicialização do widget.
@@ -247,6 +255,9 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
     // Widget de captura de tela para capturar a tela inteira
     return Screenshot(
       controller: _screenshotController,

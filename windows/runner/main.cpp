@@ -30,33 +30,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(400, 500);
-
-  // Create window without standard decorations / Cria janela sem decorações padrão
-  if (!window.CreateAndShow(L"Tamagotchi Duck", origin, size)) {
+  Win32Window::Point origin(0, 0);
+  Win32Window::Size size(1280, 720);
+  if (!window.Create(L"Tamagotchi Duck", origin, size)) {
     return EXIT_FAILURE;
   }
+  window.SetQuitOnClose(true);
 
-  // Set window properties for widget behavior / Define propriedades da janela para comportamento de widget
-  HWND hwnd = window.GetHandle();
-
-  // Remove window from taskbar / Remove janela da barra de tarefas
-  LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-  SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
-
-  // Set window to be always on top / Define janela para sempre estar em primeiro plano
-  SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
-  // Make window borderless / Torna janela sem bordas
-  LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
-  SetWindowLongPtr(hwnd, GWL_STYLE, style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU));
-
-  // Set window shape to rounded rectangle / Define forma da janela como retângulo arredondado
-  HRGN hRgn = CreateRoundRectRgn(0, 0, 400, 500, 15, 15);
-  SetWindowRgn(hwnd, hRgn, TRUE);
-
-  window.RunMessageLoop();
+  ::MSG msg;
+  while (::GetMessage(&msg, nullptr, 0, 0)) {
+    ::TranslateMessage(&msg);
+    ::DispatchMessage(&msg);
+  }
 
   ::CoUninitialize();
   return EXIT_SUCCESS;

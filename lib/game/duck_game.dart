@@ -4,6 +4,7 @@ import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
+import '../services/chat_service.dart';
 import 'duck_status.dart';
 
 /// Componente do jogo do pato usando engine Flame
@@ -24,7 +25,6 @@ class DuckGame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Garante que os widgets Flutter sejam inicializados antes de prosseguir
     // Inicializa o status do pato e carrega seu estado persistido das preferências
     duckStatus = DuckStatus();
     await duckStatus.loadFromPreferences();
@@ -33,8 +33,15 @@ class DuckGame extends FlameGame {
     duckSprite = DuckSprite(duckStatus: duckStatus);
     await add(duckSprite);
 
-    // Posiciona o sprite do pato na tela, tipicamente em uma localização centro-esquerda
-    duckSprite.position = Vector2(size.x * 0.3, size.y * 0.5);
+    // Centraliza o sprite do pato na área do jogo
+    double centerX = (size.x - duckSprite.size.x) / 2;
+    double centerY = (size.y - duckSprite.size.y) / 2;
+    duckSprite.position = Vector2(centerX, centerY);
+
+    // Registra o callback para animações da fala
+    ChatService.onPlayAnimation = (animationName) {
+      duckSprite.playAnimation(animationName);
+    };
 
     // Inicia o timer para reproduzir animações aleatórias
     startRandomAnimationTimer();
@@ -70,7 +77,7 @@ class DuckGame extends FlameGame {
     if (duckStatus.isDead) return; // Impede a ação se o pato estiver morto
 
     await duckStatus.feed(); // Atualiza o status de fome do pato
-    duckSprite.playAnimation('feed'); // Reproduz a animação de alimentação
+    duckSprite.playAnimation('run'); // Reproduz a animação de alimentação
     onStatusUpdate?.call(duckStatus.getMood()); // Notifica sobre o novo humor
   }
 
@@ -79,7 +86,7 @@ class DuckGame extends FlameGame {
     if (duckStatus.isDead) return; // Impede a ação se o pato estiver morto
 
     await duckStatus.clean(); // Atualiza o status de higiene do pato
-    duckSprite.playAnimation('clean'); // Reproduz a animação de limpeza
+    duckSprite.playAnimation('run'); // Reproduz a animação de limpeza
     onStatusUpdate?.call(duckStatus.getMood()); // Notifica sobre o novo humor
   }
 
@@ -88,14 +95,14 @@ class DuckGame extends FlameGame {
     if (duckStatus.isDead) return; // Impede a ação se o pato estiver morto
 
     await duckStatus.play(); // Atualiza o status de felicidade do pato
-    duckSprite.playAnimation('play'); // Reproduz a animação de brincadeira
+    duckSprite.playAnimation('run'); // Reproduz a animação de brincadeira
     onStatusUpdate?.call(duckStatus.getMood()); // Notifica sobre o novo humor
   }
 
   /// Revive o pato, atualiza seu status, reproduz a animação de renascimento e notifica os ouvintes.
   Future<void> reviveDuck() async {
     await duckStatus.revive(); // Redefine o status do pato para vivo e saudável
-    duckSprite.playAnimation('revive'); // Reproduz a animação de renascimento
+    duckSprite.playAnimation('fly'); // Reproduz a animação de renascimento
     onStatusUpdate?.call(duckStatus.getMood()); // Notifica sobre o novo humor
   }
 
@@ -126,6 +133,12 @@ class DuckSprite extends SpriteAnimationComponent
   Future<void> onLoad() async {
     super.onLoad();
 
+    final background = SpriteComponent()
+      ..sprite = await Sprite.load('background.png')
+      ..size = size
+      ..position = Vector2.zero();
+    await add(background);
+
     // Carrega todas as animações predefinidas para o pato de arquivos de ativos.
     await loadAnimations();
 
@@ -139,20 +152,22 @@ class DuckSprite extends SpriteAnimationComponent
 
     try {
       // Carrega a animação padrão de "idle" para o pato
-      animations['idle'] = await _loadAnimation('duck_idle.png', 4, 0.5);
+      animations['idle'] =
+          await _loadAnimation('duck_idle.png', 2, 0.3, loop: true);
 
-      // Carrega animações para ações de cuidado (alimentar, limpar, brincar)
-      animations['feed'] = await _loadAnimation('duck_feed.png', 6, 0.3);
-      animations['clean'] = await _loadAnimation('duck_clean.png', 6, 0.3);
-      animations['play'] = await _loadAnimation('duck_play.png', 8, 0.25);
-
-      // Carrega a animação de morte
-      animations['death'] = await _loadAnimation('duck_death.png', 4, 0.6);
-
-      // Carrega animações especiais como renascimento e estados felizes
-      animations['revive'] = await _loadAnimation('duck_revive.png', 6, 0.4);
-      animations['happy'] = await _loadAnimation('duck_happy.png', 4, 0.4);
-      animations['sleep'] = await _loadAnimation('duck_sleep.png', 2, 1.0);
+      // Carrega novas animações
+      animations['blink'] =
+          await _loadAnimation('duck_blink.png', 11, 0.3, loop: false);
+      animations['fly'] =
+          await _loadAnimation('duck_fly.png', 4, 0.2, loop: false);
+      animations['look'] =
+          await _loadAnimation('duck_look.png', 4, 0.5, loop: false);
+      animations['run'] =
+          await _loadAnimation('duck_run.png', 4, 0.2, loop: true);
+      animations['talk'] =
+          await _loadAnimation('duck_talk.png', 3, 0.3, loop: true);
+      animations['dead'] =
+          await _loadAnimation('duck_death.png', 4, 0.3, loop: true);
     } catch (e) {
       debugPrint(
           'Warning: Could not load duck sprites, using fallback animations'); // Registra um aviso se os sprites falharem ao carregar
@@ -162,7 +177,8 @@ class DuckSprite extends SpriteAnimationComponent
 
   /// Método auxiliar para carregar um SpriteAnimation de um nome de arquivo de folha de sprite dado.
   Future<SpriteAnimation> _loadAnimation(
-      String filename, int frames, double stepTime) async {
+      String filename, int frames, double stepTime,
+      {bool loop = true}) async {
     // Carrega o arquivo de imagem como uma folha de sprite
     final spriteSheet = await Flame.images.load('sprites/$filename');
 
@@ -172,8 +188,9 @@ class DuckSprite extends SpriteAnimationComponent
       SpriteAnimationData.sequenced(
         amount: frames, // Número total de quadros na animação
         stepTime: stepTime, // Tempo entre cada quadro em segundos
-        textureSize: Vector2.all(
-            64), // Assume que cada quadro de sprite tem 64x64 pixels
+        textureSize: Vector2(
+            220, 220), // Assume que cada quadro de sprite tem 220x200 pixels
+        loop: loop, // Define se a animação deve fazer loop
       ),
     );
   }
@@ -186,19 +203,19 @@ class DuckSprite extends SpriteAnimationComponent
     // Cria uma animação básica a partir de um único quadro de sprite
     final fallbackAnimation = SpriteAnimation.spriteList(
       [fallbackSprite], // Lista contendo o único sprite de fallback
-      stepTime: 0.5, // Tempo para cada passo da animação
+      stepTime: 0.5,
+      loop: true,
     );
 
     // Atribui a animação de fallback a todas as chaves de animação
     animations = {
       'idle': fallbackAnimation,
-      'feed': fallbackAnimation,
-      'clean': fallbackAnimation,
-      'play': fallbackAnimation,
-      'death': fallbackAnimation,
-      'revive': fallbackAnimation,
-      'happy': fallbackAnimation,
-      'sleep': fallbackAnimation,
+      'blink': fallbackAnimation,
+      'fly': fallbackAnimation,
+      'look': fallbackAnimation,
+      'run': fallbackAnimation,
+      'talk': fallbackAnimation,
+      'dead': fallbackAnimation,
     };
   }
 
@@ -212,32 +229,37 @@ class DuckSprite extends SpriteAnimationComponent
     currentAnimation = animationName; // Define o nome da animação atual
     animation = animations[animationName]; // Atribui a animação ao componente
 
-    size = Vector2.all(80); // Define o tamanho do componente sprite
+    size = Vector2(
+        220, 220); // Define o tamanho do componente sprite para 220x200 pixels
 
-    // Gerencia o comportamento de conclusão para animações não repetitivas
-    if (animationName != 'idle' &&
-        animationName != 'death' &&
-        animationName != 'sleep') {
-      animationTicker?.onComplete = () {
+    // Gerencia o comportamento de conclusão para animações que não fazem loop
+    if (animationTicker != null &&
+        (animationName == 'blink' ||
+            animationName == 'fly' ||
+            animationName == 'look')) {
+      animationTicker!.onComplete = () {
         if (duckStatus.isDead) {
           playAnimation(
-              'death'); // Transiciona para animação de morte se o pato estiver morto
+              'dead'); // Transiciona para animação de morte se o pato estiver morto
         } else {
           playAnimation('idle'); // Retorna para animação "idle" caso contrário
         }
       };
+    } else if (animationTicker != null) {
+      // Para animações que fazem loop, garante que onComplete não esteja definido
+      animationTicker!.onComplete = null;
     }
   }
 
   /// Reproduz uma animação aleatória de uma lista predefinida, garantindo que o pato não esteja morto.
   void playRandomAnimation() {
     if (duckStatus.isDead) {
-      playAnimation('death'); // Força animação de morte se o pato estiver morto
+      playAnimation('dead'); // Força animação de morte se o pato estiver morto
       return;
     }
 
     // Define uma lista de animações que podem ser reproduzidas aleatoriamente
-    final randomAnimations = ['happy', 'sleep'];
+    final randomAnimations = ['blink', 'fly', 'look'];
     // Seleciona uma animação aleatória da lista
     final randomAnimation =
         randomAnimations[Random().nextInt(randomAnimations.length)];
@@ -249,18 +271,10 @@ class DuckSprite extends SpriteAnimationComponent
   void updateAnimationBasedOnStatus() {
     if (duckStatus.isDead) {
       playAnimation(
-          'death'); // Reproduz animação de morte se o pato estiver morto
+          'dead'); // Reproduz animação de morte se o pato estiver morto
       return;
     }
-
-    // Verifica se o pato precisa de atenção e está atualmente ocioso, então reproduz uma animação sutil de busca de atenção.
-    if (duckStatus.needsAttention && currentAnimation == 'idle') {
-      final attentionMessage =
-          duckStatus.getAttentionMessage(); // Obtém a mensagem de atenção
-      if (attentionMessage != null) {
-        // Reproduz uma animação feliz como uma maneira sutil de chamar atenção
-        playAnimation('happy');
-      }
-    }
+    // No longer playing special animations based on attention needs, as random animations cover idle states.
+    // The needsAttention getter is still available in DuckStatus if needed for other UI elements.
   }
 }

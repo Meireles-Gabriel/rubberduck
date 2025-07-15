@@ -1,3 +1,4 @@
+import 'dart:io'; // Adicione esta linha
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
@@ -13,8 +14,14 @@ void main() async {
   // Inicializa o gerenciador de janelas
   await windowManager.ensureInitialized();
 
-  // Detecta o idioma do sistema
-  String? systemLocale = await Devicelocale.currentLocale;
+  String? systemLocale;
+  if (Platform.isWindows) {
+    // Fallback para Windows
+    systemLocale = null;
+  } else {
+    // Só tenta obter o locale em plataformas suportadas
+    systemLocale = await Devicelocale.currentLocale;
+  }
 
   // Define idioma padrão baseado no idioma do sistema
   String defaultLanguage =
