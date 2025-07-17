@@ -114,6 +114,12 @@ class LocalizationStrings {
       'warning_sadness':
           'Estou muito triste! Por favor, brinque comigo logo ou posso morrer!',
       'understand': 'Entendi',
+      // Novas strings da página de configurações
+      'api_key_not_configured': 'Chave API não configurada',
+      'api_key_configured': 'Chave API configurada',
+      'api_key_invalid': 'Formato de chave API inválido',
+      'save_success': 'Configurações salvas com sucesso',
+      'save_error': 'Erro ao salvar configurações: ',
     },
     'en_US': {
       // Main interface strings
@@ -181,6 +187,12 @@ class LocalizationStrings {
       'warning_sadness':
           'I\'m very sad! Please play with me soon or I might die!',
       'understand': 'Got it',
+      // New settings page strings
+      'api_key_not_configured': 'API Key not configured',
+      'api_key_configured': 'API Key configured',
+      'api_key_invalid': 'Invalid API Key format',
+      'save_success': 'Settings saved successfully',
+      'save_error': 'Error saving settings: ',
     }
   };
 }

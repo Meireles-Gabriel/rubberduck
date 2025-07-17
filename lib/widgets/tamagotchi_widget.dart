@@ -239,18 +239,44 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
       case 'feed':
         await duckGame.feedDuck();
         _showBubbleMessage(LocalizationStrings.get('fed_message'));
+        setState(() {
+          // Atualiza os estados da UI após alimentar
+          duckGame.updateDuckStatus();
+        });
         break;
       case 'clean':
         await duckGame.cleanDuck();
         _showBubbleMessage(LocalizationStrings.get('cleaned_message'));
+        setState(() {
+          // Atualiza os estados da UI após limpar
+          duckGame.updateDuckStatus();
+        });
         break;
       case 'play':
         await duckGame.playWithDuck();
         _showBubbleMessage(LocalizationStrings.get('played_message'));
+        setState(() {
+          // Atualiza os estados da UI após brincar
+          duckGame.updateDuckStatus();
+        });
         break;
     }
 
-    setState(() {}); // Aciona a atualização da UI
+    // Força uma reconstrução da UI para atualizar as cores dos botões
+    setState(() {});
+  }
+
+  /// Calcula a cor do botão baseado no valor do status (0-100)
+  Color _getStatusColor(double value) {
+    // Define as cores base (pastel)
+    const goodColor = Color(0xFF98D8A0); // Verde pastel
+    const badColor = Color(0xFFE8A39D); // Vermelho pastel
+
+    // Normaliza o valor para 0-1
+    final t = value / 100;
+
+    // Interpola entre as cores
+    return Color.lerp(badColor, goodColor, t)!;
   }
 
   @override
@@ -262,7 +288,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     return Screenshot(
       controller: _screenshotController,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFE6F3FF), // Azul pastel claro
         body: Container(
           padding: const EdgeInsets.all(8.0),
           child: Column(
@@ -360,7 +386,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
       child: DragTarget<String>(
         // Define tipos de dados aceitos para arrastar
         onWillAcceptWithDetails: (details) {
-          return details.data == 'food' ||
+          return details.data == 'feed' ||
               details.data == 'clean' ||
               details.data == 'play';
         },
@@ -405,8 +431,8 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
           _buildDraggableControl(
             icon: Icons.restaurant,
             label: LocalizationStrings.get('feed'),
-            data: 'food',
-            color: Colors.orange,
+            data: 'feed',
+            color: _getStatusColor(duckStatus.hunger),
             isDragging: _isDraggingFood,
             onDragStarted: () => setState(() => _isDraggingFood = true),
             onDragCompleted: () => setState(() => _isDraggingFood = false),
@@ -418,7 +444,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             icon: Icons.cleaning_services,
             label: LocalizationStrings.get('clean'),
             data: 'clean',
-            color: Colors.blue,
+            color: _getStatusColor(duckStatus.cleanliness),
             isDragging: _isDraggingClean,
             onDragStarted: () => setState(() => _isDraggingClean = true),
             onDragCompleted: () => setState(() => _isDraggingClean = false),
@@ -430,7 +456,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             icon: Icons.sports_esports,
             label: LocalizationStrings.get('play'),
             data: 'play',
-            color: Colors.purple,
+            color: _getStatusColor(duckStatus.happiness),
             isDragging: _isDraggingPlay,
             onDragStarted: () => setState(() => _isDraggingPlay = true),
             onDragCompleted: () => setState(() => _isDraggingPlay = false),

@@ -80,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(LocalizationStrings.get('save')),
+            content: Text(LocalizationStrings.get('save_success')),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -93,7 +93,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao salvar configurações: $e'),
+            content: Text('${LocalizationStrings.get('save_error')}$e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -113,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (apiKey.isEmpty) {
       setState(() {
-        _apiKeyStatus = 'Chave API não configurada';
+        _apiKeyStatus = LocalizationStrings.get('api_key_not_configured');
       });
       return;
     }
@@ -121,11 +121,11 @@ class _SettingsPageState extends State<SettingsPage> {
     // Validação básica para o formato da chave API
     if (apiKey.startsWith('sk-') && apiKey.length > 20) {
       setState(() {
-        _apiKeyStatus = 'Chave API configurada';
+        _apiKeyStatus = LocalizationStrings.get('api_key_configured');
       });
     } else {
       setState(() {
-        _apiKeyStatus = 'Formato de chave API inválido';
+        _apiKeyStatus = LocalizationStrings.get('api_key_invalid');
       });
     }
   }

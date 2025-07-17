@@ -24,7 +24,7 @@ class DuckStatus {
   static const double hungerDecayRate =
       4.0; // A fome diminui em 4 pontos por hora
   static const double cleanlinessDecayRate =
-      2.0; // A limpeza diminui em 2 pontos por hora
+      2.0; // A limpeza diminui em 2 ponto por hora
   static const double happinessDecayRate =
       3.0; // A felicidade diminui em 3 pontos por hora
 
@@ -103,8 +103,7 @@ class DuckStatus {
 
     final now = DateTime.now(); // Timestamp atual
     // Calcula as horas decorridas desde a última atualização
-    final hoursElapsed =
-        now.difference(lastUpdate).inMilliseconds / (1000 * 60 * 60);
+    final hoursElapsed = now.difference(lastUpdate).inHours.toDouble();
 
     if (hoursElapsed > 0) {
       // Diminui cada valor de status com base na sua taxa de degradação e horas decorridas, limitando os valores entre 0 e 100
@@ -126,19 +125,19 @@ class DuckStatus {
   Future<void> checkForDeath() async {
     final now = DateTime.now(); // Timestamp atual
 
-    // Define a duração de um dia em milissegundos para verificar necessidades críticas atrasadas
-    final dayInMilliseconds = 24 * 60 * 60 * 1000;
+    // Define o número de horas para verificar necessidades críticas atrasadas (24 horas)
+    const criticalHours = 24;
 
     // Verifica se o pato morreu devido à fome prolongada e nível de fome baixo
-    if (now.difference(lastFeed).inMilliseconds > dayInMilliseconds &&
+    if (now.difference(lastFeed).inHours >= criticalHours &&
         hunger < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'hunger'; // Define a causa da morte como fome
-    } else if (now.difference(lastClean).inMilliseconds > dayInMilliseconds &&
+    } else if (now.difference(lastClean).inHours >= criticalHours &&
         cleanliness < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'dirty'; // Define a causa da morte como sujeira
-    } else if (now.difference(lastPlay).inMilliseconds > dayInMilliseconds &&
+    } else if (now.difference(lastPlay).inHours >= criticalHours &&
         happiness < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'sadness'; // Define a causa da morte como tristeza
@@ -164,6 +163,7 @@ class DuckStatus {
     hunger = (hunger + 30.0).clamp(
         0.0, 100.0); // Aumenta a fome em 30 pontos, limitado entre 0 e 100
     lastFeed = DateTime.now(); // Atualiza o timestamp da última alimentação
+    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 
@@ -174,6 +174,7 @@ class DuckStatus {
     cleanliness = (cleanliness + 35.0).clamp(
         0.0, 100.0); // Aumenta a limpeza em 35 pontos, limitado entre 0 e 100
     lastClean = DateTime.now(); // Atualiza o timestamp da última limpeza
+    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 
@@ -184,6 +185,7 @@ class DuckStatus {
     happiness = (happiness + 40.0).clamp(0.0,
         100.0); // Aumenta a felicidade em 40 pontos, limitado entre 0 e 100
     lastPlay = DateTime.now(); // Atualiza o timestamp da última brincadeira
+    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 
@@ -204,6 +206,7 @@ class DuckStatus {
     lastClean = now;
     lastPlay = now;
 
+    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status de revivido
   }
 

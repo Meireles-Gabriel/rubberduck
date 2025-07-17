@@ -25,6 +25,13 @@ class DuckGame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
 
+    // Adiciona o background primeiro
+    final background = SpriteComponent()
+      ..sprite = await Sprite.load('background.png')
+      ..size = size
+      ..position = Vector2.zero();
+    await add(background);
+
     // Inicializa o status do pato e carrega seu estado persistido das preferências
     duckStatus = DuckStatus();
     await duckStatus.loadFromPreferences();
@@ -133,12 +140,6 @@ class DuckSprite extends SpriteAnimationComponent
   Future<void> onLoad() async {
     super.onLoad();
 
-    final background = SpriteComponent()
-      ..sprite = await Sprite.load('background.png')
-      ..size = size
-      ..position = Vector2.zero();
-    await add(background);
-
     // Carrega todas as animações predefinidas para o pato de arquivos de ativos.
     await loadAnimations();
 
@@ -163,7 +164,7 @@ class DuckSprite extends SpriteAnimationComponent
       animations['look'] =
           await _loadAnimation('duck_look.png', 4, 0.5, loop: false);
       animations['run'] =
-          await _loadAnimation('duck_run.png', 4, 0.2, loop: true);
+          await _loadAnimation('duck_run.png', 4, 0.2, loop: false);
       animations['talk'] =
           await _loadAnimation('duck_talk.png', 3, 0.3, loop: true);
       animations['dead'] =
@@ -236,7 +237,8 @@ class DuckSprite extends SpriteAnimationComponent
     if (animationTicker != null &&
         (animationName == 'blink' ||
             animationName == 'fly' ||
-            animationName == 'look')) {
+            animationName == 'look' ||
+            animationName == 'run')) {
       animationTicker!.onComplete = () {
         if (duckStatus.isDead) {
           playAnimation(
