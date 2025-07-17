@@ -1,8 +1,7 @@
-import 'dart:io'; // Adicione esta linha
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:window_manager/window_manager.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:devicelocale/devicelocale.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/tamagotchi_widget.dart';
 import 'utils/localization_strings.dart';
@@ -14,18 +13,25 @@ void main() async {
   // Inicializa o gerenciador de janelas
   await windowManager.ensureInitialized();
 
-  String? systemLocale;
-  if (Platform.isWindows) {
-    // Fallback para Windows
-    systemLocale = null;
-  } else {
-    // Só tenta obter o locale em plataformas suportadas
-    systemLocale = await Devicelocale.currentLocale;
-  }
+  // Obtém o locale do sistema usando a API nativa do Flutter
+  final List<Locale> systemLocales = ui.PlatformDispatcher.instance.locales;
+  final String systemLocale =
+      systemLocales.isNotEmpty ? systemLocales.first.toString() : '';
+  debugPrint('System locale: $systemLocale'); // Para debug
 
   // Define idioma padrão baseado no idioma do sistema
-  String defaultLanguage =
-      (systemLocale?.startsWith('pt') ?? false) ? 'pt_BR' : 'en_US';
+  String defaultLanguage = 'en_US'; // Começa com en_US como fallback
+
+  // Verifica se o locale é português (pt_BR)
+  if (systemLocale.toLowerCase().contains('pt') ||
+      systemLocale.toLowerCase().contains('portuguese')) {
+    defaultLanguage = 'pt_BR';
+    debugPrint(
+        'Setting language to pt_BR based on system locale: $systemLocale');
+  } else {
+    debugPrint(
+        'Using default language en_US (system locale was: $systemLocale)');
+  }
 
   // Obtém a instância de shared preferences
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -36,6 +42,8 @@ void main() async {
 
   // Inicializa a localização
   await LocalizationStrings.init();
+  debugPrint(
+      'Initialized localization, current language: ${LocalizationStrings.currentLanguage}');
 
   // Configura propriedades da janela
   WindowOptions windowOptions = const WindowOptions(
@@ -69,16 +77,38 @@ void main() async {
     win.minSize = const Size(350, 450); // Tamanho mínimo da janela
     win.maxSize = const Size(450, 550); // Tamanho máximo da janela
     win.size = initialSize; // Define o tamanho inicial
-    win.alignment =
-        Alignment.bottomRight; // Alinha a janela ao canto inferior direito
+    win.alignment = Alignment.bottomRight; // Alinha a janela ao centro
     win.title = "Tamagotchi Duck"; // Define o título da janela
     win.show(); // Mostra a janela bitsdojo
   });
 }
 
 /// Widget principal da aplicação
-class TamagotchiDuckApp extends StatelessWidget {
+class TamagotchiDuckApp extends StatefulWidget {
   const TamagotchiDuckApp({super.key});
+
+  @override
+  State<TamagotchiDuckApp> createState() => _TamagotchiDuckAppState();
+}
+
+class _TamagotchiDuckAppState extends State<TamagotchiDuckApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    setState(() {}); // Rebuild when system locale changes
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -177,8 +177,8 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     // Inicia animação de aparição do balão
     _bubbleAnimationController.forward();
 
-    // Define um temporizador para esconder o balão após 5 segundos
-    Timer(const Duration(seconds: 5), () {
+    // Define um temporizador para esconder o balão após 1 minuto
+    Timer(const Duration(seconds: 30), () {
       if (mounted) {
         _bubbleAnimationController.reverse().then((_) {
           if (mounted) {
@@ -350,16 +350,24 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                       ],
                     ),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 250),
-                      child: Text(
-                        _currentBubbleMessage,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                      constraints: const BoxConstraints(
+                        maxWidth: 250,
+                        maxHeight: 80, // Altura máxima para 3-4 linhas
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            _currentBubbleMessage,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3, // Melhora o espaçamento entre linhas
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),

@@ -120,6 +120,7 @@ class LocalizationStrings {
       'api_key_invalid': 'Formato de chave API inválido',
       'save_success': 'Configurações salvas com sucesso',
       'save_error': 'Erro ao salvar configurações: ',
+      'exit_app': 'Sair do Aplicativo',
     },
     'en_US': {
       // Main interface strings
@@ -193,6 +194,7 @@ class LocalizationStrings {
       'api_key_invalid': 'Invalid API Key format',
       'save_success': 'Settings saved successfully',
       'save_error': 'Error saving settings: ',
+      'exit_app': 'Exit Application',
     }
   };
 }

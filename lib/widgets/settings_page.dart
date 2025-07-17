@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 import '../utils/localization_strings.dart';
 import '../services/chat_service.dart';
 
@@ -68,8 +69,6 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      await LocalizationStrings.setLanguage('pt_BR');
-
       // Salva a chave API usando ChatService
       await ChatService.setApiKey(_apiKeyController.text.trim());
 
@@ -163,6 +162,11 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Seção para seleção de idioma
+                  _buildLanguageSection(),
+
+                  const SizedBox(height: 16),
+
                   // Seção para configurações da chave API
                   _buildApiKeySection(),
 
@@ -173,6 +177,72 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  /// Builds the language selection section
+  Widget _buildLanguageSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.language,
+                  color: Colors.blue.shade600,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  LocalizationStrings.get('language'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildLanguageButton(
+                    'pt_BR', LocalizationStrings.get('portuguese')),
+                _buildLanguageButton(
+                    'en_US', LocalizationStrings.get('english')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a language selection button
+  Widget _buildLanguageButton(String languageCode, String languageName) {
+    final isSelected = LocalizationStrings.currentLanguage == languageCode;
+    return ElevatedButton(
+      onPressed: () async {
+        await LocalizationStrings.setLanguage(languageCode);
+        setState(() {}); // Refresh UI
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
+        foregroundColor: isSelected ? Colors.white : Colors.black87,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(languageName),
     );
   }
 
@@ -240,7 +310,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _apiKeyStatus,
               style: TextStyle(
                 color: _apiKeyStatus.contains('não configurada') ||
-                        _apiKeyStatus.contains('inválido')
+                        _apiKeyStatus.contains('inválido') ||
+                        _apiKeyStatus.contains('not configured') ||
+                        _apiKeyStatus.contains('Invalid')
                     ? Colors.orange
                     : Colors.green,
                 fontSize: 12,
@@ -256,39 +328,67 @@ class _SettingsPageState extends State<SettingsPage> {
   ///
   /// Constrói a seção de botões de ação (Salvar e Fechar) na página de configurações.
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+    return Column(
       children: [
-        // Close button / Botão fechar
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            LocalizationStrings.get('close'),
-            style: TextStyle(color: Colors.blue.shade600),
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Save button / Botão salvar
-        ElevatedButton(
-          onPressed: _isLoading ? null : _saveSettings,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue.shade600,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Close button / Botão fechar
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                LocalizationStrings.get('close'),
+                style: TextStyle(color: Colors.blue.shade600),
+              ),
             ),
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(LocalizationStrings.get('save')),
+            const SizedBox(width: 8),
+            // Save button / Botão salvar
+            ElevatedButton(
+              onPressed: _isLoading ? null : _saveSettings,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(LocalizationStrings.get('save')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Exit app button / Botão sair do aplicativo
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () async {
+                await windowManager.close();
+              },
+              icon: const Icon(Icons.exit_to_app),
+              label: Text(LocalizationStrings.get('exit_app')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade400,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

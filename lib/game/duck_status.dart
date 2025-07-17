@@ -22,11 +22,11 @@ class DuckStatus {
 
   // Taxas pelas quais cada status se degrada por hora
   static const double hungerDecayRate =
-      4.0; // A fome diminui em 4 pontos por hora
+      10.0; // A fome diminui em 10 pontos por hora
   static const double cleanlinessDecayRate =
-      2.0; // A limpeza diminui em 2 ponto por hora
+      5.0; // A limpeza diminui em 5 ponto por hora
   static const double happinessDecayRate =
-      3.0; // A felicidade diminui em 3 pontos por hora
+      7.0; // A felicidade diminui em 7 pontos por hora
 
   // O limiar abaixo do qual um status faz o pato morrer
   static const double deathThreshold =
@@ -102,10 +102,11 @@ class DuckStatus {
     }
 
     final now = DateTime.now(); // Timestamp atual
-    // Calcula as horas decorridas desde a última atualização
-    final hoursElapsed = now.difference(lastUpdate).inHours.toDouble();
+    // Calcula as horas decorridas desde a última atualização (com precisão de minutos)
+    final minutesElapsed = now.difference(lastUpdate).inMinutes.toDouble();
+    final hoursElapsed = minutesElapsed / 60.0;
 
-    if (hoursElapsed > 0) {
+    if (minutesElapsed > 0) {
       // Diminui cada valor de status com base na sua taxa de degradação e horas decorridas, limitando os valores entre 0 e 100
       hunger = (hunger - (hungerDecayRate * hoursElapsed)).clamp(0.0, 100.0);
       cleanliness = (cleanliness - (cleanlinessDecayRate * hoursElapsed))
@@ -125,19 +126,19 @@ class DuckStatus {
   Future<void> checkForDeath() async {
     final now = DateTime.now(); // Timestamp atual
 
-    // Define o número de horas para verificar necessidades críticas atrasadas (24 horas)
-    const criticalHours = 24;
+    // Define o número de minutos para verificar necessidades críticas atrasadas (24 horas = 1440 minutos)
+    const criticalMinutes = 24 * 60;
 
     // Verifica se o pato morreu devido à fome prolongada e nível de fome baixo
-    if (now.difference(lastFeed).inHours >= criticalHours &&
+    if (now.difference(lastFeed).inMinutes >= criticalMinutes &&
         hunger < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'hunger'; // Define a causa da morte como fome
-    } else if (now.difference(lastClean).inHours >= criticalHours &&
+    } else if (now.difference(lastClean).inMinutes >= criticalMinutes &&
         cleanliness < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'dirty'; // Define a causa da morte como sujeira
-    } else if (now.difference(lastPlay).inHours >= criticalHours &&
+    } else if (now.difference(lastPlay).inMinutes >= criticalMinutes &&
         happiness < deathThreshold) {
       isDead = true; // Marca o pato como morto
       deathCause = 'sadness'; // Define a causa da morte como tristeza
