@@ -327,7 +327,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   /// Constrói a área animada do balão de fala para exibir mensagens.
   Widget _buildBubbleArea() {
     return Container(
-      height: 60,
+      height: 40, // Altura reduzida do balão de fala
       alignment: Alignment.center,
       child: _isBubbleVisible
           ? AnimatedBuilder(
@@ -351,8 +351,8 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                     ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
-                        maxWidth: 250,
-                        maxHeight: 80, // Altura máxima para 3-4 linhas
+                        maxWidth: 150, // Largura máxima reduzida
+                        maxHeight: 50, // Altura máxima reduzida
                       ),
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
@@ -361,9 +361,9 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                           child: Text(
                             _currentBubbleMessage,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 11, // Tamanho da fonte reduzido
                               fontWeight: FontWeight.w500,
-                              height: 1.3, // Melhora o espaçamento entre linhas
+                              height: 1.2, // Espaçamento entre linhas reduzido
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -513,11 +513,11 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         ),
       ),
       childWhenDragging: Container(
-        width: 60,
-        height: 60,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: color.withAlpha(76),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: color,
             width: 2,
@@ -527,15 +527,15 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         child: Icon(
           icon,
           color: color.withAlpha(128),
-          size: 30,
+          size: 16,
         ),
       ),
       child: Container(
-        width: 60,
-        height: 60,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: color.withAlpha(76),
@@ -547,7 +547,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         child: Icon(
           icon,
           color: Colors.white,
-          size: 30,
+          size: 16,
         ),
       ),
     );
@@ -564,11 +564,11 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         );
       },
       child: Container(
-        width: 60,
-        height: 60,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: Colors.grey.shade600,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withAlpha(76),
@@ -580,7 +580,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         child: const Icon(
           Icons.settings,
           color: Colors.white,
-          size: 30,
+          size: 16,
         ),
       ),
     );
@@ -608,12 +608,14 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                 enabled:
                     !_isChatLoading, // Desativa durante o carregamento do chat
                 maxLength: 50, // Comprimento máximo para entrada
+                style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
                   hintText: LocalizationStrings.get('chat_placeholder'),
+                  hintStyle: const TextStyle(fontSize: 12),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 12,
+                    vertical: 8,
                   ),
                   counterText: '', // Esconde contador de caracteres
                 ),
@@ -638,16 +640,16 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                     }
                   },
             child: Container(
-              width: 50,
-              height: 50,
+              width: 35,
+              height: 35,
               decoration: BoxDecoration(
                 color: _isChatLoading ? Colors.grey : Colors.blue,
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(17.5),
               ),
               child: _isChatLoading
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 15,
+                      height: 15,
                       child: CircularProgressIndicator(
                         color: Colors.white,
                         strokeWidth: 2,
@@ -656,7 +658,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                   : const Icon(
                       Icons.send,
                       color: Colors.white,
-                      size: 24,
+                      size: 18,
                     ),
             ),
           ),

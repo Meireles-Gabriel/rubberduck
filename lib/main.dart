@@ -47,15 +47,15 @@ void main() async {
 
   // Configura propriedades da janela
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(400, 500), // Tamanho da janela
+    size: Size(200, 250), // Tamanho da janela reduzido pela metade
     center: false, // Não centralizar janela
     backgroundColor: Colors.transparent, // Fundo transparente
     skipTaskbar: true, // Esconder da barra de tarefas
     titleBarStyle: TitleBarStyle.hidden, // Esconder barra de título
     alwaysOnTop: true, // Sempre em primeiro plano
     fullScreen: false, // Não em tela cheia
-    minimumSize: Size(350, 450), // Tamanho mínimo
-    maximumSize: Size(450, 550), // Tamanho máximo
+    minimumSize: Size(175, 225), // Tamanho mínimo reduzido
+    maximumSize: Size(225, 275), // Tamanho máximo reduzido
   );
 
   // Aplica configuração da janela
@@ -73,9 +73,9 @@ void main() async {
   // Configura janela bitsdojo
   doWhenWindowReady(() {
     final win = appWindow; // Obtém a instância da janela do aplicativo
-    const initialSize = Size(400, 500); // Tamanho inicial da janela
-    win.minSize = const Size(350, 450); // Tamanho mínimo da janela
-    win.maxSize = const Size(450, 550); // Tamanho máximo da janela
+    const initialSize = Size(200, 250); // Tamanho inicial da janela
+    win.minSize = const Size(175, 225); // Tamanho mínimo da janela
+    win.maxSize = const Size(225, 275); // Tamanho máximo da janela
     win.size = initialSize; // Define o tamanho inicial
     win.alignment = Alignment.bottomRight; // Alinha a janela ao centro
     win.title = "Tamagotchi Duck"; // Define o título da janela

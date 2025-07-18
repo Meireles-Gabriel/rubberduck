@@ -39,7 +39,7 @@ class LocalizationStrings {
       'play': 'Brincar', // Texto para o botão de ação brincar
       'settings': 'Configurações', // Texto para o botão de configurações
       'chat_placeholder':
-          'Digite sua mensagem aqui...', // Texto de placeholder para o campo de entrada do chat
+          'Digite aqui...', // Texto de placeholder para o campo de entrada do chat
       'chat_send': 'Enviar', // Texto para o botão de envio do chat
       'chat_max_chars':
           'Máx 50 caracteres', // Mensagem indicando o número máximo de caracteres para entrada do chat
@@ -128,7 +128,7 @@ class LocalizationStrings {
       'clean': 'Clean',
       'play': 'Play',
       'settings': 'Settings',
-      'chat_placeholder': 'Type your message here...',
+      'chat_placeholder': 'Type here...',
       'chat_send': 'Send',
       'chat_max_chars': 'Max 50 chars',
 

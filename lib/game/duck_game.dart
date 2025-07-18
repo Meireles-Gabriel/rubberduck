@@ -230,8 +230,8 @@ class DuckSprite extends SpriteAnimationComponent
     currentAnimation = animationName; // Define o nome da animação atual
     animation = animations[animationName]; // Atribui a animação ao componente
 
-    size = Vector2(
-        220, 220); // Define o tamanho do componente sprite para 220x200 pixels
+    size = Vector2(100,
+        100); // Define o tamanho do componente sprite para 100x100 pixels
 
     // Gerencia o comportamento de conclusão para animações que não fazem loop
     if (animationTicker != null &&
