@@ -77,7 +77,7 @@ void main() async {
     win.minSize = const Size(175, 225); // Tamanho mínimo da janela
     win.maxSize = const Size(225, 275); // Tamanho máximo da janela
     win.size = initialSize; // Define o tamanho inicial
-    win.alignment = Alignment.bottomRight; // Alinha a janela ao centro
+    win.alignment = Alignment.topRight; // Alinha a janela ao centro
     win.title = "Tamagotchi Duck"; // Define o título da janela
     win.show(); // Mostra a janela bitsdojo
   });

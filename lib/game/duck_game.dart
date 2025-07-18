@@ -25,11 +25,8 @@ class DuckGame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
 
-    // Adiciona o background primeiro
-    final background = SpriteComponent()
-      ..sprite = await Sprite.load('background.png')
-      ..size = size
-      ..position = Vector2.zero();
+    // Cria um componente para o background que se ajusta automaticamente
+    final background = BackgroundComponent();
     await add(background);
 
     // Inicializa o status do pato e carrega seu estado persistido das preferências
@@ -121,6 +118,25 @@ class DuckGame extends FlameGame {
   }
 }
 
+/// Componente de background que se ajusta automaticamente ao tamanho do jogo
+class BackgroundComponent extends SpriteComponent
+    with HasGameRef<DuckGame> {
+  @override
+  Future<void> onLoad() async {
+    super.onLoad();
+    sprite = await Sprite.load('background.png');
+    size = gameRef.size;
+    position = Vector2.zero();
+    priority = -1; // Garante que fique atrás de todos os outros componentes
+  }
+
+  @override
+  void onGameResize(Vector2 gameSize) {
+    super.onGameResize(gameSize);
+    size = gameSize;
+  }
+}
+
 /// Representa a aparência visual do pato e gerencia suas animações dentro do jogo.
 class DuckSprite extends SpriteAnimationComponent
     with HasGameReference<DuckGame> {
@@ -135,6 +151,16 @@ class DuckSprite extends SpriteAnimationComponent
 
   /// Construtor para DuckSprite, exigindo uma instância de DuckStatus.
   DuckSprite({required this.duckStatus});
+
+  @override
+  void onGameResize(Vector2 gameSize) {
+    super.onGameResize(gameSize);
+    // Recentraliza o sprite quando o tamanho do jogo mudar
+    position = Vector2(
+      (gameSize.x - size.x) / 2,
+      (gameSize.y - size.y) / 2,
+    );
+  }
 
   @override
   Future<void> onLoad() async {
@@ -230,8 +256,8 @@ class DuckSprite extends SpriteAnimationComponent
     currentAnimation = animationName; // Define o nome da animação atual
     animation = animations[animationName]; // Atribui a animação ao componente
 
-    size = Vector2(100,
-        100); // Define o tamanho do componente sprite para 100x100 pixels
+    size = Vector2(
+        100, 100); // Define o tamanho do componente sprite para 100x100 pixels
 
     // Gerencia o comportamento de conclusão para animações que não fazem loop
     if (animationTicker != null &&

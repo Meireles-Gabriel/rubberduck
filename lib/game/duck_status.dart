@@ -217,23 +217,6 @@ class DuckStatus {
       cleanliness < 30 ||
       happiness < 30; // Verdadeiro se qualquer status crítico estiver baixo
 
-  /// Retorna uma string indicando qual necessidade específica (fome, sujeira, tristeza) requer atenção urgente, ou nulo se nenhuma.
-  String? getAttentionMessage() {
-    if (isDead) {
-      return null; // Um pato morto não precisa de mensagens de atenção
-    }
-
-    if (hunger < 20) return 'hungry'; // Retorna 'hungry' se a fome for crítica
-    if (cleanliness < 20) {
-      return 'dirty'; // Retorna 'dirty' se a limpeza for crítica
-    }
-    if (happiness < 20) {
-      return 'sad'; // Retorna 'sad' se a felicidade for crítica
-    }
-
-    return null; // Retorna nulo se nenhuma atenção crítica for necessária
-  }
-
   /// Calcula e retorna o humor geral do pato com base na média de seus níveis de fome, limpeza e felicidade.
   String getMood() {
     if (isDead) return 'dead'; // Se morto, o humor é 'morto'

@@ -134,31 +134,25 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: Colors.white.withAlpha(242),
       appBar: AppBar(
+        toolbarHeight: 40,
         title: Text(
           LocalizationStrings.get('settings_title'),
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          // Botão para fechar a página de configurações
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close),
-            tooltip: LocalizationStrings.get('close'),
-          ),
-        ],
+        
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -188,7 +182,7 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -197,27 +191,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 Icon(
                   Icons.language,
                   color: Colors.blue.shade600,
-                  size: 24,
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Text(
                   LocalizationStrings.get('language'),
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildLanguageButton(
-                    'pt_BR', LocalizationStrings.get('portuguese')),
-                _buildLanguageButton(
-                    'en_US', LocalizationStrings.get('english')),
-              ],
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildLanguageButton(
+                      'pt_BR', LocalizationStrings.get('portuguese')),
+                  const SizedBox(height: 8),
+                  _buildLanguageButton(
+                      'en_US', LocalizationStrings.get('english')),
+                ],
+              ),
             ),
           ],
         ),
@@ -237,9 +234,9 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor:
             isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
         foregroundColor: isSelected ? Colors.white : Colors.black87,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
         ),
       ),
       child: Text(languageName),
@@ -258,7 +255,7 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(4.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -268,13 +265,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 Icon(
                   Icons.vpn_key,
                   color: Colors.blue.shade600,
-                  size: 24,
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Text(
                   LocalizationStrings.get('api_key'),
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -315,7 +312,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         _apiKeyStatus.contains('Invalid')
                     ? Colors.orange
                     : Colors.green,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
@@ -331,7 +328,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Close button / Botão fechar
             TextButton(
@@ -349,9 +346,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 backgroundColor: Colors.blue.shade600,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
               child: _isLoading
@@ -382,9 +379,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 backgroundColor: Colors.red.shade400,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),

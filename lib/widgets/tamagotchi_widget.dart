@@ -103,34 +103,23 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   }
 
   /// Verifica o status inicial do pato na inicialização do widget.
-  /// Exibe o diálogo de morte se o pato estiver morto, ou uma mensagem de atenção se necessário.
+  /// Exibe o diálogo de morte se o pato estiver morto.
   void _checkInitialStatus() {
     if (duckStatus.isDead) {
       // Mostra diálogo de morte após a construção do frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showDeathDialog();
       });
-    } else if (duckStatus.needsAttention) {
-      // Obtém e mostra mensagem de atenção se o pato precisar de atenção
-      final message = duckStatus.getAttentionMessage();
-      if (message != null) {
-        _showBubbleMessage(LocalizationStrings.get(message));
-      }
     }
   }
 
   /// Função de callback para lidar com atualizações no status do pato.
-  /// Atualiza a interface do usuário e mostra uma mensagem de balão se o pato precisar de atenção.
+  /// Atualiza a interface do usuário e as cores dos botões de controle.
   void _onStatusUpdate(String mood) {
     if (mounted) {
       setState(() {
-        // Atualiza UI com base no humor do pato
-        if (duckStatus.needsAttention) {
-          final message = duckStatus.getAttentionMessage();
-          if (message != null) {
-            _showBubbleMessage(LocalizationStrings.get(message));
-          }
-        }
+        // Força uma reconstrução da UI para atualizar as cores dos botões
+        duckGame.updateDuckStatus();
       });
     }
   }
@@ -290,7 +279,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
       child: Scaffold(
         backgroundColor: const Color(0xFFE6F3FF), // Azul pastel claro
         body: Container(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(4.0),
           child: Column(
             children: [
               // Área de mensagem do balão de fala
@@ -302,7 +291,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                   children: [
                     // Área de exibição do pato
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: _buildDuckArea(),
                     ),
 
@@ -336,8 +325,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                 return Transform.scale(
                   scale: _bubbleAnimation.value,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -349,23 +337,23 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                         ),
                       ],
                     ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 150, // Largura máxima reduzida
-                        maxHeight: 50, // Altura máxima reduzida
-                      ),
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Text(
-                            _currentBubbleMessage,
-                            style: const TextStyle(
-                              fontSize: 11, // Tamanho da fonte reduzido
-                              fontWeight: FontWeight.w500,
-                              height: 1.2, // Espaçamento entre linhas reduzido
+                    child: SizedBox(
+                      width: 160,
+                      height: 50,
+                      child: Center(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 0),
+                            child: Text(
+                              _currentBubbleMessage,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -388,7 +376,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.blue.shade200,
-          width: 2,
+          width: 4,
         ),
       ),
       child: DragTarget<String>(
@@ -421,7 +409,14 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                       ),
                     ),
                   )
-                : GameWidget(game: duckGame), // Exibe o widget do jogo
+                : SizedBox.expand(
+                    child: GameWidget(
+                      game: duckGame,
+                      backgroundBuilder: (context) => Container(
+                        color: Colors.lightBlue.shade50,
+                      ),
+                    ),
+                  ), // Exibe o widget do jogo preenchendo todo o espaço
           );
         },
       ),
@@ -589,12 +584,14 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   /// Constrói a área de entrada de chat com um campo de texto e botão de enviar.
   Widget _buildChatArea() {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(4.0),
       child: Row(
         children: [
           // Campo de entrada expandido para mensagens de chat
-          Expanded(
+          SizedBox(
+            width: 137,
             child: Container(
+              height: 35,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(25),
@@ -603,21 +600,22 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                   width: 1,
                 ),
               ),
+              alignment: Alignment.center,
               child: TextField(
                 controller: _chatController,
-                enabled:
-                    !_isChatLoading, // Desativa durante o carregamento do chat
-                maxLength: 50, // Comprimento máximo para entrada
+                enabled: !_isChatLoading,
+                maxLength: 50,
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
                   hintText: LocalizationStrings.get('chat_placeholder'),
                   hintStyle: const TextStyle(fontSize: 12),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 16,
                     vertical: 8,
                   ),
-                  counterText: '', // Esconde contador de caracteres
+                  counterText: '',
+                  isDense: true,
                 ),
                 onSubmitted: (value) {
                   if (value.isNotEmpty) {
