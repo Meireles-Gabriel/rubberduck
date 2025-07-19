@@ -22,11 +22,11 @@ class DuckStatus {
 
   // Taxas pelas quais cada status se degrada por hora
   static const double hungerDecayRate =
-      10.0; // A fome diminui em 10 pontos por hora
+      1000.0; // A fome diminui em 10 pontos por hora
   static const double cleanlinessDecayRate =
-      5.0; // A limpeza diminui em 5 ponto por hora
+      500.0; // A limpeza diminui em 5 ponto por hora
   static const double happinessDecayRate =
-      7.0; // A felicidade diminui em 7 pontos por hora
+      700.0; // A felicidade diminui em 7 pontos por hora
 
   // O limiar abaixo do qual um status faz o pato morrer
   static const double deathThreshold =
@@ -164,7 +164,6 @@ class DuckStatus {
     hunger = (hunger + 30.0).clamp(
         0.0, 100.0); // Aumenta a fome em 30 pontos, limitado entre 0 e 100
     lastFeed = DateTime.now(); // Atualiza o timestamp da última alimentação
-    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 
@@ -175,7 +174,6 @@ class DuckStatus {
     cleanliness = (cleanliness + 35.0).clamp(
         0.0, 100.0); // Aumenta a limpeza em 35 pontos, limitado entre 0 e 100
     lastClean = DateTime.now(); // Atualiza o timestamp da última limpeza
-    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 
@@ -186,7 +184,6 @@ class DuckStatus {
     happiness = (happiness + 40.0).clamp(0.0,
         100.0); // Aumenta a felicidade em 40 pontos, limitado entre 0 e 100
     lastPlay = DateTime.now(); // Atualiza o timestamp da última brincadeira
-    await updateStatus(); // Atualiza o status geral
     await saveToPreferences(); // Salva o status atualizado
   }
 

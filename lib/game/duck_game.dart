@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_renaming_method_parameters, deprecated_member_use
+
 import 'dart:async' as dart_async;
 import 'dart:math';
 import 'package:flame/flame.dart';

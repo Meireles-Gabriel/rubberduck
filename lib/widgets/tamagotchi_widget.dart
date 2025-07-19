@@ -114,12 +114,11 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   }
 
   /// Função de callback para lidar com atualizações no status do pato.
-  /// Atualiza a interface do usuário e as cores dos botões de controle.
+  /// Atualiza a interface do usuário para refletir o novo estado.
   void _onStatusUpdate(String mood) {
     if (mounted) {
       setState(() {
-        // Força uma reconstrução da UI para atualizar as cores dos botões
-        duckGame.updateDuckStatus();
+        // Apenas força uma reconstrução da UI
       });
     }
   }
@@ -228,31 +227,17 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
       case 'feed':
         await duckGame.feedDuck();
         _showBubbleMessage(LocalizationStrings.get('fed_message'));
-        setState(() {
-          // Atualiza os estados da UI após alimentar
-          duckGame.updateDuckStatus();
-        });
         break;
       case 'clean':
         await duckGame.cleanDuck();
         _showBubbleMessage(LocalizationStrings.get('cleaned_message'));
-        setState(() {
-          // Atualiza os estados da UI após limpar
-          duckGame.updateDuckStatus();
-        });
         break;
       case 'play':
         await duckGame.playWithDuck();
         _showBubbleMessage(LocalizationStrings.get('played_message'));
-        setState(() {
-          // Atualiza os estados da UI após brincar
-          duckGame.updateDuckStatus();
-        });
         break;
     }
-
-    // Força uma reconstrução da UI para atualizar as cores dos botões
-    setState(() {});
+    // Removido setState redundante aqui!
   }
 
   /// Calcula a cor do botão baseado no valor do status (0-100)
