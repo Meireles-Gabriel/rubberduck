@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:ui' as ui;
 import 'package:window_manager/window_manager.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
@@ -17,7 +18,6 @@ void main() async {
   final List<Locale> systemLocales = ui.PlatformDispatcher.instance.locales;
   final String systemLocale =
       systemLocales.isNotEmpty ? systemLocales.first.toString() : '';
-  debugPrint('System locale: $systemLocale'); // Para debug
 
   // Define idioma padrão baseado no idioma do sistema
   String defaultLanguage = 'en_US'; // Começa com en_US como fallback
@@ -26,11 +26,6 @@ void main() async {
   if (systemLocale.toLowerCase().contains('pt') ||
       systemLocale.toLowerCase().contains('portuguese')) {
     defaultLanguage = 'pt_BR';
-    debugPrint(
-        'Setting language to pt_BR based on system locale: $systemLocale');
-  } else {
-    debugPrint(
-        'Using default language en_US (system locale was: $systemLocale)');
   }
 
   // Obtém a instância de shared preferences
@@ -42,8 +37,7 @@ void main() async {
 
   // Inicializa a localização
   await LocalizationStrings.init();
-  debugPrint(
-      'Initialized localization, current language: ${LocalizationStrings.currentLanguage}');
+
 
   // Configura propriedades da janela
   WindowOptions windowOptions = const WindowOptions(
@@ -68,7 +62,7 @@ void main() async {
   });
 
   // Executa a aplicação
-  runApp(const TamagotchiDuckApp());
+  runApp(ProviderScope(child: const TamagotchiDuckApp()));
 
   // Configura janela bitsdojo
   doWhenWindowReady(() {

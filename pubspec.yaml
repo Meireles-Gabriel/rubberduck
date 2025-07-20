@@ -28,6 +28,9 @@ dependencies:
   devicelocale: ^0.8.1
   # Desktop integration / Integração com desktop
   desktop_window: ^0.4.0
+  # State management
+  flutter_riverpod: ^2.4.9
+  riverpod: ^2.4.9
 
 dev_dependencies:
   flutter_test:

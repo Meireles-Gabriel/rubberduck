@@ -121,6 +121,11 @@ class LocalizationStrings {
       'save_success': 'Configurações salvas com sucesso',
       'save_error': 'Erro ao salvar configurações: ',
       'exit_app': 'Sair do Aplicativo',
+      'duck_name': 'Nome do Pato',
+      'duck_name_hint': 'Digite o nome do seu pato',
+      'duck_name_saved': 'Nome do pato salvo com sucesso!',
+      'duck_name_error': 'Erro ao salvar o nome do pato.',
+      'duck_name_default': '',
     },
     'en_US': {
       // Main interface strings
@@ -195,6 +200,11 @@ class LocalizationStrings {
       'save_success': 'Settings saved successfully',
       'save_error': 'Error saving settings: ',
       'exit_app': 'Exit Application',
+      'duck_name': 'Duck Name',
+      'duck_name_hint': 'Enter your duck\'s name',
+      'duck_name_saved': 'Duck name saved successfully!',
+      'duck_name_error': 'Error saving duck name.',
+      'duck_name_default': '',
     }
   };
 }

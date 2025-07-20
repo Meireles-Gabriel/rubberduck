@@ -2,28 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../game/duck_game.dart';
 import '../game/duck_status.dart';
-import '../game/death_revival_system.dart';
 import '../services/chat_service.dart';
 import '../services/periodic_tasks.dart';
 import '../utils/localization_strings.dart';
 import 'settings_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Widget principal do tamagotchi
-class TamagotchiWidget extends StatefulWidget {
+class TamagotchiWidget extends ConsumerStatefulWidget {
   const TamagotchiWidget({super.key});
 
+  static final ValueNotifier<String> duckNameNotifier =
+      ValueNotifier<String>('');
+
   @override
-  State<TamagotchiWidget> createState() => _TamagotchiWidgetState();
+  ConsumerState<TamagotchiWidget> createState() => TamagotchiWidgetState();
 }
 
-/// Classe de estado para TamagotchiWidget
-class _TamagotchiWidgetState extends State<TamagotchiWidget>
+class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     with TickerProviderStateMixin {
   // Objetos relacionados ao jogo e status
   late DuckGame duckGame;
-  late DuckStatus duckStatus;
   late PeriodicTasksManager periodicTasks;
   bool _isInitialized = false;
 
@@ -43,42 +45,46 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
   late AnimationController _bubbleAnimationController;
   late Animation<double> _bubbleAnimation;
 
+  ValueNotifier<String> get duckNameNotifier =>
+      TamagotchiWidget.duckNameNotifier;
+
   @override
   void initState() {
     super.initState();
-    // Inicializa o estado do widget
     _initializeWidget();
+    _loadDuckName();
+  }
+
+  Future<void> _loadDuckName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('duck_name') ?? '';
+    duckNameNotifier.value = name;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadDuckName();
   }
 
   @override
   void dispose() {
-    // Descarta controladores e tarefas periódicas
+    duckNameNotifier.dispose();
     _chatController.dispose();
     periodicTasks.dispose();
     _bubbleAnimationController.dispose();
     super.dispose();
   }
 
-  /// Inicializa todos os componentes necessários para o widget, incluindo status do pato, jogo,
-  /// tarefas periódicas e animação do balão.
   Future<void> _initializeWidget() async {
-    // Inicializa status do pato e carrega das preferências
-    duckStatus = DuckStatus();
-    await duckStatus.loadFromPreferences();
-
     // Inicializa jogo e vincula com status do pato
-    duckGame = DuckGame();
-    duckGame.duckStatus = duckStatus;
-    duckGame.onStatusUpdate = _onStatusUpdate;
-
+    duckGame = DuckGame(duckStatus: ref.read(duckStatusProvider));
     // Inicializa gerenciador de tarefas periódicas e vincula callbacks
     periodicTasks = PeriodicTasksManager();
-    periodicTasks.onStatusUpdate = _onStatusUpdate;
     periodicTasks.onAutoComment = _onAutoComment;
     periodicTasks.onDeathDetected = _onDeathDetected;
-    periodicTasks.initialize(duckStatus);
+    periodicTasks.initialize(ref.read(duckStatusProvider.notifier));
 
-    // Configura controlador de animação e interpolação do balão
     _bubbleAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -91,10 +97,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
       curve: Curves.elasticOut,
     ));
 
-    // Realiza verificação de status inicial
     _checkInitialStatus();
-
-    // Marca como inicializado
     if (mounted) {
       setState(() {
         _isInitialized = true;
@@ -102,70 +105,52 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     }
   }
 
-  /// Verifica o status inicial do pato na inicialização do widget.
-  /// Exibe o diálogo de morte se o pato estiver morto.
   void _checkInitialStatus() {
+    final duckStatus = ref.read(duckStatusProvider);
     if (duckStatus.isDead) {
-      // Mostra diálogo de morte após a construção do frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showDeathDialog();
       });
     }
   }
 
-  /// Função de callback para lidar com atualizações no status do pato.
-  /// Atualiza a interface do usuário para refletir o novo estado.
-  void _onStatusUpdate(String mood) {
-    if (mounted) {
-      setState(() {
-        // Apenas força uma reconstrução da UI
-      });
-    }
-  }
-
-  /// Função de callback para lidar com comentários automáticos do pato.
-  /// Exibe o comentário na área da mensagem do balão.
   void _onAutoComment(String comment) {
     if (mounted) {
       _showBubbleMessage(comment);
     }
   }
 
-  /// Função de callback para lidar com a detecção da morte do pato.
-  /// Aciona a exibição do diálogo de morte.
   void _onDeathDetected() {
     if (mounted) {
       _showDeathDialog();
     }
   }
 
-  /// Exibe o diálogo do sistema de morte e renascimento.
-  /// Após o renascimento, atualiza o status do pato e mostra uma mensagem de felicidade.
   void _showDeathDialog() {
-    DeathRevivalSystem.showDeathDialog(
-      context,
-      duckStatus,
-      () async {
-        await duckGame.reviveDuck();
-        setState(() {
-          _showBubbleMessage(LocalizationStrings.get('happy'));
-        });
-      },
-    );
+    final duckStatus = ref.read(duckStatusProvider);
+    String deathMessage;
+    switch (duckStatus.deathCause) {
+      case 'hunger':
+        deathMessage = LocalizationStrings.get('died_hunger');
+        break;
+      case 'dirty':
+        deathMessage = LocalizationStrings.get('died_dirty');
+        break;
+      case 'sadness':
+        deathMessage = LocalizationStrings.get('died_sadness');
+        break;
+      default:
+        deathMessage = LocalizationStrings.get('died_hunger');
+    }
+    _showBubbleMessage(deathMessage);
   }
 
-  /// Mostra uma mensagem no balão de fala do pato.
-  /// O balão aparece com uma animação e se esconde após um atraso.
   void _showBubbleMessage(String message) {
     setState(() {
       _currentBubbleMessage = message;
       _isBubbleVisible = true;
     });
-
-    // Inicia animação de aparição do balão
     _bubbleAnimationController.forward();
-
-    // Define um temporizador para esconder o balão após 1 minuto
     Timer(const Duration(seconds: 30), () {
       if (mounted) {
         _bubbleAnimationController.reverse().then((_) {
@@ -179,37 +164,24 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     });
   }
 
-  /// Gerencia o envio de uma mensagem de chat para o serviço ChatGPT.
-  /// Valida a mensagem, mostra o estado de carregamento, envia a mensagem e exibe a resposta ou erro.
   Future<void> _handleChatMessage() async {
     final message = _chatController.text.trim();
-
-    // Valida a mensagem de chat
     if (!ChatService.isMessageValid(message)) {
       final error = ChatService.getValidationError(message);
       _showBubbleMessage(error);
       return;
     }
-
-    // Limpa o campo de entrada do chat
     _chatController.clear();
-
-    // Mostra indicador de carregamento e mensagem "pensando"
     setState(() {
       _isChatLoading = true;
     });
     _showBubbleMessage(LocalizationStrings.get('thinking'));
-
     try {
-      // Envia mensagem para ChatGPT com captura de tela
       final response =
           await ChatService.sendMessage(message, includeScreenshot: true);
-
-      // Exibe a resposta do ChatGPT
       _showBubbleMessage(response);
     } catch (e) {
       debugPrint('Error sending chat message: $e');
-      // Mostra mensagem de erro se o chat falhar
       _showBubbleMessage(LocalizationStrings.get('error_chat'));
     } finally {
       setState(() {
@@ -218,78 +190,62 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     }
   }
 
-  /// Gerencia ações de cuidado como alimentar, limpar ou brincar com o pato.
-  /// Impede ações se o pato estiver morto e mostra uma mensagem de confirmação.
   Future<void> _handleCareAction(String action) async {
-    if (duckStatus.isDead) return; // Não faz nada se o pato estiver morto
-
+    final notifier = ref.read(duckStatusProvider.notifier);
+    final duckStatus = ref.read(duckStatusProvider);
+    if (duckStatus.isDead) return;
     switch (action) {
       case 'feed':
-        await duckGame.feedDuck();
+        notifier.feed();
         _showBubbleMessage(LocalizationStrings.get('fed_message'));
         break;
       case 'clean':
-        await duckGame.cleanDuck();
+        notifier.clean();
         _showBubbleMessage(LocalizationStrings.get('cleaned_message'));
         break;
       case 'play':
-        await duckGame.playWithDuck();
+        notifier.play();
         _showBubbleMessage(LocalizationStrings.get('played_message'));
         break;
     }
-    // Removido setState redundante aqui!
   }
 
-  /// Calcula a cor do botão baseado no valor do status (0-100)
   Color _getStatusColor(double value) {
-    // Define as cores base (pastel)
-    const goodColor = Color(0xFF98D8A0); // Verde pastel
-    const badColor = Color(0xFFE8A39D); // Vermelho pastel
-
-    // Normaliza o valor para 0-1
+    const goodColor = Color(0xFF98D8A0);
+    const badColor = Color(0xFFE8A39D);
     final t = value / 100;
-
-    // Interpola entre as cores
     return Color.lerp(badColor, goodColor, t)!;
   }
 
   @override
   Widget build(BuildContext context) {
+    final duckStatus = ref.watch(duckStatusProvider);
     if (!_isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-    // Widget de captura de tela para capturar a tela inteira
     return Screenshot(
       controller: _screenshotController,
       child: Scaffold(
-        backgroundColor: const Color(0xFFE6F3FF), // Azul pastel claro
+        backgroundColor: const Color(0xFFE6F3FF),
         body: Container(
           padding: const EdgeInsets.all(4.0),
           child: Column(
             children: [
-              // Área de mensagem do balão de fala
               _buildBubbleArea(),
-
-              // Área principal do jogo com pato e controles
               Expanded(
                 child: Row(
                   children: [
-                    // Área de exibição do pato
                     Expanded(
                       flex: 3,
                       child: _buildDuckArea(),
                     ),
-
-                    // Controles para ações de cuidado
                     Expanded(
                       flex: 1,
-                      child: _buildControlsArea(),
+                      child: _buildControlsArea(duckStatus),
                     ),
                   ],
                 ),
               ),
-
-              // Área de entrada e envio de chat
               _buildChatArea(),
             ],
           ),
@@ -298,10 +254,9 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     );
   }
 
-  /// Constrói a área animada do balão de fala para exibir mensagens.
   Widget _buildBubbleArea() {
     return Container(
-      height: 40, // Altura reduzida do balão de fala
+      height: 40,
       alignment: Alignment.center,
       child: _isBubbleVisible
           ? AnimatedBuilder(
@@ -347,12 +302,10 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                 );
               },
             )
-          : const SizedBox.shrink(), // Esconde se não visível
+          : const SizedBox.shrink(),
     );
   }
 
-  /// Constrói a área interativa onde o jogo do pato é exibido.
-  /// Permite soltar itens de cuidado no pato.
   Widget _buildDuckArea() {
     return Container(
       margin: const EdgeInsets.all(8.0),
@@ -365,13 +318,11 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
         ),
       ),
       child: DragTarget<String>(
-        // Define tipos de dados aceitos para arrastar
         onWillAcceptWithDetails: (details) {
           return details.data == 'feed' ||
               details.data == 'clean' ||
               details.data == 'play';
         },
-        // Lida com a ação de soltar aceita
         onAcceptWithDetails: (data) {
           _handleCareAction(data.data);
         },
@@ -381,7 +332,6 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             height: double.infinity,
             child: candidateData.isNotEmpty
                 ? Container(
-                    // Feedback visual quando um item é arrastado por cima
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.green.withAlpha(51),
@@ -394,28 +344,55 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
                       ),
                     ),
                   )
-                : SizedBox.expand(
-                    child: GameWidget(
-                      game: duckGame,
-                      backgroundBuilder: (context) => Container(
-                        color: Colors.lightBlue.shade50,
+                : Stack(children: [
+                    SizedBox.expand(
+                      child: GameWidget(
+                        game: duckGame,
+                        backgroundBuilder: (context) => Container(
+                          color: Colors.lightBlue.shade50,
+                        ),
                       ),
                     ),
-                  ), // Exibe o widget do jogo preenchendo todo o espaço
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: ValueListenableBuilder<String>(
+                          valueListenable: duckNameNotifier,
+                          builder: (context, duckName, _) {
+                            return Text(
+                              duckName.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFE0A44B),
+                                shadows: [
+                                  Shadow(
+                                    blurRadius: 2,
+                                    color: Color(0xFF80492C),
+                                    offset: Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ]),
           );
         },
       ),
     );
   }
 
-  /// Constrói a área contendo controles para alimentar, limpar, brincar e configurações.
-  Widget _buildControlsArea() {
+  Widget _buildControlsArea(DuckStatus duckStatus) {
     return Container(
       margin: const EdgeInsets.all(8.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Controle arrastável para alimentar o pato
           _buildDraggableControl(
             icon: Icons.restaurant,
             label: LocalizationStrings.get('feed'),
@@ -426,8 +403,6 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             onDragCompleted: () => setState(() => _isDraggingFood = false),
             onDragCancelled: () => setState(() => _isDraggingFood = false),
           ),
-
-          // Controle arrastável para limpar o pato
           _buildDraggableControl(
             icon: Icons.cleaning_services,
             label: LocalizationStrings.get('clean'),
@@ -438,8 +413,6 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             onDragCompleted: () => setState(() => _isDraggingClean = false),
             onDragCancelled: () => setState(() => _isDraggingClean = false),
           ),
-
-          // Controle arrastável para brincar com o pato
           _buildDraggableControl(
             icon: Icons.sports_esports,
             label: LocalizationStrings.get('play'),
@@ -450,16 +423,12 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
             onDragCompleted: () => setState(() => _isDraggingPlay = false),
             onDragCancelled: () => setState(() => _isDraggingPlay = false),
           ),
-
-          // Botão para navegar para a página de configurações
           _buildSettingsButton(),
         ],
       ),
     );
   }
 
-  /// Constrói um botão de controle arrastável para ações de cuidado.
-  /// Inclui feedback visual para o estado de arrasto.
   Widget _buildDraggableControl({
     required IconData icon,
     required String label,
@@ -533,7 +502,6 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     );
   }
 
-  /// Constrói o botão de configurações, que navega para a SettingsPage.
   Widget _buildSettingsButton() {
     return GestureDetector(
       onTap: () {
@@ -566,13 +534,41 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
     );
   }
 
-  /// Constrói a área de entrada de chat com um campo de texto e botão de enviar.
   Widget _buildChatArea() {
+    final duckStatus = ref.watch(duckStatusProvider);
+    if (duckStatus.isDead) {
+      return Container(
+        padding: const EdgeInsets.all(8.0),
+        width: double.infinity,
+        child: Center(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.favorite, color: Colors.white),
+            label: Text(LocalizationStrings.get('revive'),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              ref.read(duckStatusProvider.notifier).revive();
+              setState(() {
+                _showBubbleMessage(LocalizationStrings.get('happy'));
+              });
+            },
+          ),
+        ),
+      );
+    }
+    // Chat normal
     return Container(
       padding: const EdgeInsets.all(4.0),
       child: Row(
         children: [
-          // Campo de entrada expandido para mensagens de chat
           SizedBox(
             width: 137,
             child: Container(
@@ -610,10 +606,7 @@ class _TamagotchiWidgetState extends State<TamagotchiWidget>
               ),
             ),
           ),
-
-          const SizedBox(width: 8), // Espaçamento entre entrada e botão
-
-          // Botão de enviar para mensagens de chat
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: _isChatLoading
                 ? null

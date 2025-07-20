@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import '../utils/localization_strings.dart';
 import '../services/chat_service.dart';
+import 'tamagotchi_widget.dart';
 
 /// Página de configurações para o pato tamagotchi
 class SettingsPage extends StatefulWidget {
@@ -16,6 +17,9 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   // Controlador para o campo de texto da chave API
   final TextEditingController _apiKeyController = TextEditingController();
+  // Controlador para o campo de texto do nome do pato
+  final TextEditingController _duckNameController = TextEditingController();
+  String _duckNameStatus = '';
 
   // Variáveis de estado para gerenciar a UI e as configurações
   bool _isLoading = false;
@@ -46,6 +50,12 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
+      // Recupera e define o nome do pato
+      final duckName = prefs.getString('duck_name') ??
+          LocalizationStrings.get('duck_name_default');
+      _duckNameController.text = duckName;
+      _duckNameStatus = '';
+
       // Recupera e define a chave API
       final apiKey = prefs.getString('chatgpt_api_key') ?? '';
       _apiKeyController.text = apiKey;
@@ -72,6 +82,19 @@ class _SettingsPageState extends State<SettingsPage> {
       // Salva a chave API usando ChatService
       await ChatService.setApiKey(_apiKeyController.text.trim());
 
+      // Salva o nome do pato
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'duck_name',
+          _duckNameController.text.trim().isEmpty
+              ? LocalizationStrings.get('duck_name_default')
+              : _duckNameController.text.trim());
+      // Notifica o jogo para atualizar o nome do pato em tempo real
+      TamagotchiWidget.duckNameNotifier.value = _duckNameController.text.trim();
+      setState(() {
+        _duckNameStatus = LocalizationStrings.get('duck_name_saved');
+      });
+
       // Verifica novamente o status da chave API após salvar
       await _checkApiKeyStatus();
 
@@ -87,6 +110,9 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       debugPrint('Error saving settings: $e');
+      setState(() {
+        _duckNameStatus = LocalizationStrings.get('duck_name_error');
+      });
 
       // Mostra snackbar de erro
       if (mounted) {
@@ -145,7 +171,6 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         elevation: 0,
-        
       ),
       body: _isLoading
           ? const Center(
@@ -156,6 +181,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildDuckNameSection(),
                   // Seção para seleção de idioma
                   _buildLanguageSection(),
 
@@ -171,6 +197,64 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildDuckNameSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.pets,
+                  color: Colors.blue.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  LocalizationStrings.get('duck_name'),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _duckNameController,
+              maxLength: 10,
+              decoration: InputDecoration(
+                labelText: LocalizationStrings.get('duck_name'),
+                hintText: LocalizationStrings.get('duck_name_hint'),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                counterText: '',
+              ),
+            ),
+            if (_duckNameStatus.isNotEmpty)
+              Text(
+                _duckNameStatus,
+                style: TextStyle(
+                  color: _duckNameStatus.contains('sucesso') ||
+                          _duckNameStatus.contains('success')
+                      ? Colors.green
+                      : Colors.red,
+                  fontSize: 10,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
