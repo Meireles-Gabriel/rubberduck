@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
-import 'package:screenshot/screenshot.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../game/duck_game.dart';
@@ -31,7 +30,6 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
 
   // Controladores para entrada de texto e captura de tela
   final TextEditingController _chatController = TextEditingController();
-  final ScreenshotController _screenshotController = ScreenshotController();
 
   // Variáveis de estado para elementos da UI
   String _currentBubbleMessage = '';
@@ -108,6 +106,7 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   void _checkInitialStatus() {
     final duckStatus = ref.read(duckStatusProvider);
     if (duckStatus.isDead) {
+      duckGame.forceDeadAnimation();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showDeathDialog();
       });
@@ -223,32 +222,29 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     if (!_isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-    return Screenshot(
-      controller: _screenshotController,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFE6F3FF),
-        body: Container(
-          padding: const EdgeInsets.all(4.0),
-          child: Column(
-            children: [
-              _buildBubbleArea(),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: _buildDuckArea(),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: _buildControlsArea(duckStatus),
-                    ),
-                  ],
-                ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFE6F3FF),
+      body: Container(
+        padding: const EdgeInsets.all(4.0),
+        child: Column(
+          children: [
+            _buildBubbleArea(),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: _buildDuckArea(),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: _buildControlsArea(duckStatus),
+                  ),
+                ],
               ),
-              _buildChatArea(),
-            ],
-          ),
+            ),
+            _buildChatArea(),
+          ],
         ),
       ),
     );
@@ -556,6 +552,7 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
             ),
             onPressed: () {
               ref.read(duckStatusProvider.notifier).revive();
+              duckGame.forceReviveAnimation();
               setState(() {
                 _showBubbleMessage(LocalizationStrings.get('happy'));
               });

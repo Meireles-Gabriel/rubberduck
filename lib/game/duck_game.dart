@@ -75,6 +75,16 @@ class DuckGame extends FlameGame {
     duckSprite.playAnimation('fly');
   }
 
+  void forceDeadAnimation() {
+    duckSprite.playAnimation('dead');
+    randomAnimationTimer?.cancel();
+  }
+
+  void forceReviveAnimation() {
+    duckSprite.playAnimation('fly');
+    startRandomAnimationTimer();
+  }
+
   @override
   void onRemove() {
     randomAnimationTimer?.cancel();

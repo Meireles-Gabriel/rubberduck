@@ -19,7 +19,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _apiKeyController = TextEditingController();
   // Controlador para o campo de texto do nome do pato
   final TextEditingController _duckNameController = TextEditingController();
-  String _duckNameStatus = '';
 
   // Variáveis de estado para gerenciar a UI e as configurações
   bool _isLoading = false;
@@ -54,7 +53,6 @@ class _SettingsPageState extends State<SettingsPage> {
       final duckName = prefs.getString('duck_name') ??
           LocalizationStrings.get('duck_name_default');
       _duckNameController.text = duckName;
-      _duckNameStatus = '';
 
       // Recupera e define a chave API
       final apiKey = prefs.getString('chatgpt_api_key') ?? '';
@@ -91,9 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
               : _duckNameController.text.trim());
       // Notifica o jogo para atualizar o nome do pato em tempo real
       TamagotchiWidget.duckNameNotifier.value = _duckNameController.text.trim();
-      setState(() {
-        _duckNameStatus = LocalizationStrings.get('duck_name_saved');
-      });
+      setState(() {});
 
       // Verifica novamente o status da chave API após salvar
       await _checkApiKeyStatus();
@@ -110,9 +106,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       debugPrint('Error saving settings: $e');
-      setState(() {
-        _duckNameStatus = LocalizationStrings.get('duck_name_error');
-      });
+      setState(() {});
 
       // Mostra snackbar de erro
       if (mounted) {
@@ -241,17 +235,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 counterText: '',
               ),
             ),
-            if (_duckNameStatus.isNotEmpty)
-              Text(
-                _duckNameStatus,
-                style: TextStyle(
-                  color: _duckNameStatus.contains('sucesso') ||
-                          _duckNameStatus.contains('success')
-                      ? Colors.green
-                      : Colors.red,
-                  fontSize: 10,
-                ),
-              ),
           ],
         ),
       ),

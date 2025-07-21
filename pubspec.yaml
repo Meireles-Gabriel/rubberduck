@@ -19,7 +19,7 @@ dependencies:
   # HTTP requests for ChatGPT API / Requisições HTTP para API do ChatGPT
   http: ^1.1.0
   # Screenshot capture / Captura de tela
-  screenshot: ^3.0.0
+  flutter_screen_capture:
   # Path utilities / Utilitários de caminho
   path_provider: ^2.1.1
   # JSON handling / Manipulação de JSON

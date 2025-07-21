@@ -146,6 +146,8 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     debugPrint('  deathCause: ${map['deathCause']}');
 
     state = DuckStatus.fromMap(map);
+    // Verifica imediatamente as necessidades e se o pato deve estar morto
+    updateStatus();
   }
 
   Future<void> saveToPreferences() async {
@@ -226,7 +228,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     final durationSinceFeed = nowDT.difference(state.lastFeed);
     final durationSinceClean = nowDT.difference(state.lastClean);
     final durationSincePlay = nowDT.difference(state.lastPlay);
-    const deathHours = 24;
+    const deathHours = 1;
     if (state.hunger <= deathThreshold &&
         durationSinceFeed.inHours >= deathHours) {
       state = state.copyWith(isDead: true, deathCause: 'hunger');
