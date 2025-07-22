@@ -193,8 +193,13 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
   }
 
   void revive() {
+    final wasDeadBefore = state.isDead;
     state = DuckStatus();
     saveToPreferences();
+
+    if (wasDeadBefore) {
+      debugPrint('[DuckStatus] Pato reviveu - resetando status');
+    }
   }
 
   // Atualização baseada no tempo decorrido

@@ -126,6 +126,9 @@ class LocalizationStrings {
       'duck_name_saved': 'Nome do pato salvo com sucesso!',
       'duck_name_error': 'Erro ao salvar o nome do pato.',
       'duck_name_default': '',
+
+      // Strings da tela de loading
+      'loading_duck': 'Carregando\nseu patinho...',
     },
     'en_US': {
       // Main interface strings
@@ -205,6 +208,9 @@ class LocalizationStrings {
       'duck_name_saved': 'Duck name saved successfully!',
       'duck_name_error': 'Error saving duck name.',
       'duck_name_default': '',
+
+      // Loading screen strings
+      'loading_duck': 'Loading\nyour duckling...',
     }
   };
 }

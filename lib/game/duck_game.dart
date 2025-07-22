@@ -17,7 +17,10 @@ class DuckGame extends FlameGame {
   WidgetRef? ref;
 
   // Representa o sprite visual e as animações do pato no jogo
-  late DuckSprite duckSprite;
+  DuckSprite? duckSprite;
+
+  // Flag para indicar se o jogo foi completamente carregado
+  bool _isLoaded = false;
 
   // Timer responsável por agendar animações aleatórias para o pato
   dart_async.Timer? randomAnimationTimer;
@@ -26,6 +29,9 @@ class DuckGame extends FlameGame {
   Function(String)? onStatusUpdate;
 
   DuckGame({this.duckStatus, this.duckStatusProvider, this.ref});
+
+  /// Getter para verificar se o jogo foi completamente carregado
+  bool get hasLoaded => _isLoaded;
 
   @override
   Future<void> onLoad() async {
@@ -36,61 +42,103 @@ class DuckGame extends FlameGame {
     // Usa o estado do provider
     final status = duckStatus ?? ref?.read(duckStatusProvider!);
     duckSprite = DuckSprite(duckStatus: status!);
-    await add(duckSprite);
+    await add(duckSprite!);
 
-    double centerX = (size.x - duckSprite.size.x) / 2;
-    double centerY = (size.y - duckSprite.size.y) / 2;
-    duckSprite.position = Vector2(centerX, centerY);
+    // Aguarda um frame para garantir que a animação inicial seja carregada
+    // e então reposiciona o sprite no centro
+    await Future.delayed(Duration.zero);
+    double centerX = (size.x - duckSprite!.size.x) / 2;
+    double centerY = (size.y - duckSprite!.size.y) / 2;
+    duckSprite!.position = Vector2(centerX, centerY);
 
+    _isLoaded = true;
     startRandomAnimationTimer();
   }
 
   void startRandomAnimationTimer() {
     randomAnimationTimer?.cancel();
-    randomAnimationTimer = dart_async.Timer.periodic(
-      Duration(seconds: Random().nextInt(20) + 10),
-      (timer) {
+
+    void scheduleNextAnimation() {
+      final delay = Duration(seconds: Random().nextInt(20) + 10);
+      randomAnimationTimer = dart_async.Timer(delay, () {
         final status = duckStatus ?? ref?.read(duckStatusProvider!);
-        if (status != null && !status.isDead) {
-          duckSprite.playRandomAnimation();
+        if (status != null &&
+            !status.isDead &&
+            _isLoaded &&
+            duckSprite != null) {
+          duckSprite!.playRandomAnimation();
         }
-      },
-    );
+        // Agenda a próxima animação aleatória
+        if (status != null && !status.isDead) {
+          scheduleNextAnimation();
+        }
+      });
+    }
+
+    scheduleNextAnimation();
   }
 
   // Métodos de animação para serem chamados externamente
   void playFeedAnimation() {
-    duckSprite.playAnimation('run');
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('run');
+    }
   }
 
   void playCleanAnimation() {
-    duckSprite.playAnimation('run');
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('run');
+    }
   }
 
   void playPlayAnimation() {
-    duckSprite.playAnimation('run');
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('run');
+    }
   }
 
   void playReviveAnimation() {
-    duckSprite.playAnimation('fly');
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('fly');
+    }
   }
 
   void forceDeadAnimation() {
-    duckSprite.playAnimation('dead', force: true);
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('dead', force: true);
+    }
     randomAnimationTimer?.cancel();
   }
 
   void forceReviveAnimation() {
-    duckSprite.playAnimation('fly', force: true);
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('fly', force: true);
+    }
     startRandomAnimationTimer();
   }
 
   void playTalkAnimation() {
-    duckSprite.playAnimation('talk', force: true);
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('talk', force: true);
+    }
   }
 
   void forceIdleAnimation() {
-    duckSprite.playAnimation('idle', force: true);
+    if (_isLoaded && duckSprite != null) {
+      duckSprite!.playAnimation('idle', force: true);
+    }
+  }
+
+  /// Atualiza o status do sprite quando o estado do pato muda
+  void updateSpriteStatus() {
+    if (_isLoaded && duckSprite != null) {
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null) {
+        // Atualiza a referência do status no sprite
+        // Note: Isso não é ideal, mas necessário devido à arquitetura atual
+        duckSprite!.updateAnimationBasedOnStatus();
+      }
+    }
   }
 
   @override
@@ -204,6 +252,7 @@ class DuckSprite extends SpriteAnimationComponent
     if (!animations.containsKey(animationName)) {
       animationName = 'idle';
     }
+
     // Não sobrescreve 'dead' se estiver morto, a menos que force
     if (duckStatus.isDead && animationName != 'dead' && !force) {
       return;
@@ -215,13 +264,24 @@ class DuckSprite extends SpriteAnimationComponent
     currentAnimation = animationName;
     animation = animations[animationName];
     size = Vector2(100, 100);
+
+    // Reposiciona o sprite no centro após mudar o tamanho
+    if (game.size.x > 0 && game.size.y > 0) {
+      position = Vector2(
+        (game.size.x - size.x) / 2,
+        (game.size.y - size.y) / 2,
+      );
+    }
     if (animationTicker != null &&
         (animationName == 'blink' ||
             animationName == 'fly' ||
             animationName == 'look' ||
             animationName == 'run')) {
       animationTicker!.onComplete = () {
-        if (duckStatus.isDead) {
+        // Para animação 'fly', sempre vai para 'idle' (usada na revivificação)
+        if (animationName == 'fly') {
+          playAnimation('idle', force: true);
+        } else if (duckStatus.isDead) {
           playAnimation('dead', force: true);
         } else {
           playAnimation('idle', force: true);
@@ -255,6 +315,10 @@ class DuckSprite extends SpriteAnimationComponent
     if (duckStatus.isDead) {
       playAnimation('dead');
       return;
+    }
+    // Se não está morto e não está em uma animação específica, vai para idle
+    if (currentAnimation == 'dead') {
+      playAnimation('idle', force: true);
     }
   }
 }

@@ -51,14 +51,26 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   @override
   void initState() {
     super.initState();
-    _initializeWidget();
-    _loadDuckName();
+    // Garante que a inicialização seja feita após o primeiro frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWidget();
+      _loadDuckName();
+    });
   }
 
   Future<void> _loadDuckName() async {
-    final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('duck_name') ?? '';
-    duckNameNotifier.value = name;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString('duck_name') ?? '';
+      if (mounted) {
+        duckNameNotifier.value = name;
+      }
+    } catch (e) {
+      debugPrint('Error loading duck name: $e');
+      if (mounted) {
+        duckNameNotifier.value = '';
+      }
+    }
   }
 
   @override
@@ -77,40 +89,120 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   }
 
   Future<void> _initializeWidget() async {
-    // Inicializa jogo e vincula com status do pato
-    duckGame = DuckGame(duckStatus: ref.read(duckStatusProvider));
-    // Inicializa gerenciador de tarefas periódicas e vincula callbacks
-    periodicTasks = PeriodicTasksManager();
-    periodicTasks.onAutoComment = _onAutoComment;
-    periodicTasks.onDeathDetected = _onDeathDetected;
-    periodicTasks.initialize(ref.read(duckStatusProvider.notifier));
+    try {
+      // Inicializa jogo e vincula com status do pato
+      duckGame = DuckGame(duckStatus: ref.read(duckStatusProvider));
 
-    _bubbleAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _bubbleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _bubbleAnimationController,
-      curve: Curves.elasticOut,
-    ));
+      // Inicializa gerenciador de tarefas periódicas e vincula callbacks
+      periodicTasks = PeriodicTasksManager();
+      periodicTasks.onAutoComment = _onAutoComment;
+      periodicTasks.onDeathDetected = _onDeathDetected;
+      periodicTasks.initialize(ref.read(duckStatusProvider.notifier));
 
-    _checkInitialStatus();
-    if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
+      // Verifica imediatamente se o pato está morto para pausar tarefas se necessário
+      final currentStatus = ref.read(duckStatusProvider);
+      if (currentStatus.isDead) {
+        periodicTasks.pauseTasksDueToDeath();
+      }
+
+      _bubbleAnimationController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
+      );
+      _bubbleAnimation = Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _bubbleAnimationController,
+        curve: Curves.elasticOut,
+      ));
+
+      // Aguarda o jogo ser carregado antes de verificar status inicial
+      await _waitForGameToLoad();
+      _checkInitialStatus();
+
+      // Se o pato estava morto mas o jogo não estava carregado, força animação agora
+      final statusAfterLoad = ref.read(duckStatusProvider);
+      if (statusAfterLoad.isDead && duckGame.hasLoaded) {
+        duckGame.forceDeadAnimation();
+      }
+
+      // Aguarda um frame para garantir que o layout seja calculado corretamente
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing widget: $e');
+      // Em caso de erro, ainda marca como inicializado para evitar tela preta
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _waitForGameToLoad() async {
+    // Aguarda até que o jogo esteja carregado (máximo 2 segundos)
+    const maxWaitTime = Duration(seconds: 2);
+    const checkInterval = Duration(milliseconds: 100);
+    var totalWaitTime = Duration.zero;
+
+    while (!duckGame.hasLoaded && totalWaitTime < maxWaitTime) {
+      await Future.delayed(checkInterval);
+      totalWaitTime += checkInterval;
+    }
+
+    if (totalWaitTime >= maxWaitTime) {
+      debugPrint('Warning: DuckGame took too long to load');
     }
   }
 
   void _checkInitialStatus() {
     final duckStatus = ref.read(duckStatusProvider);
     if (duckStatus.isDead) {
-      duckGame.forceDeadAnimation();
+      debugPrint(
+          '[TamagotchiWidget] Pato está morto na inicialização - exibindo animação e mensagem sem som');
+
+      // Força animação de morte assim que possível
+      _forceDeadAnimationWhenReady();
+
+      // Mostra diálogo de morte sem som na inicialização
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showDeathDialog();
+      });
+    }
+  }
+
+  // Método auxiliar para garantir que a animação de morte seja aplicada assim que o jogo carregar
+  Future<void> _forceDeadAnimationWhenReady() async {
+    if (duckGame.hasLoaded) {
+      duckGame.forceDeadAnimation();
+      debugPrint(
+          '[TamagotchiWidget] Animação de morte aplicada - jogo já carregado');
+    } else {
+      // Se o jogo ainda não carregou, aguarda e tenta novamente
+      debugPrint(
+          '[TamagotchiWidget] Aguardando jogo carregar para aplicar animação de morte');
+      int attempts = 0;
+      const maxAttempts = 30; // 3 segundos máximo
+
+      Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        attempts++;
+        if (duckGame.hasLoaded) {
+          duckGame.forceDeadAnimation();
+          debugPrint(
+              '[TamagotchiWidget] Animação de morte aplicada após ${attempts * 100}ms');
+          timer.cancel();
+        } else if (attempts >= maxAttempts) {
+          debugPrint(
+              '[TamagotchiWidget] Timeout aguardando carregamento do jogo');
+          timer.cancel();
+        }
       });
     }
   }
@@ -122,9 +214,36 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   }
 
   void _onDeathDetected() {
-    if (mounted) {
+    if (mounted && duckGame.hasLoaded) {
       duckGame.forceDeadAnimation();
-      _showDeathDialog();
+      // Quando a morte é detectada dinamicamente (não na inicialização), mostra com som
+      _showDeathDialogWithSound();
+    }
+  }
+
+  void _showDeathDialogWithSound() {
+    final duckStatus = ref.read(duckStatusProvider);
+
+    String deathMessage;
+    switch (duckStatus.deathCause) {
+      case 'hunger':
+        deathMessage = LocalizationStrings.get('died_hunger');
+        break;
+      case 'dirty':
+        deathMessage = LocalizationStrings.get('died_dirty');
+        break;
+      case 'sadness':
+        deathMessage = LocalizationStrings.get('died_sadness');
+        break;
+      default:
+        deathMessage = LocalizationStrings.get('died_hunger');
+    }
+
+    // Reproduz som quando a morte é detectada dinamicamente
+    _showBubbleMessage(deathMessage,
+        animationOverride: 'dead', playSound: true);
+    if (duckGame.hasLoaded) {
+      duckGame.forceDeadAnimation();
     }
   }
 
@@ -145,12 +264,21 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
       default:
         deathMessage = LocalizationStrings.get('died_hunger');
     }
-    _showBubbleMessage(deathMessage, animationOverride: 'dead');
-    duckGame.forceDeadAnimation();
+
+    // Não reproduz som quando mostra mensagem de morte
+    _showBubbleMessage(deathMessage,
+        animationOverride: 'dead', playSound: false);
+    if (duckGame.hasLoaded) {
+      duckGame.forceDeadAnimation();
+    }
   }
 
-  void _showBubbleMessage(String message, {String? animationOverride}) {
-    FlameAudio.play('quack.wav');
+  void _showBubbleMessage(String message,
+      {String? animationOverride, bool playSound = true}) {
+    // Reproduz som apenas se solicitado (false para mensagens de morte na inicialização)
+    if (playSound) {
+      FlameAudio.play('quack.wav');
+    }
     final wasVisible = _isBubbleVisible;
     setState(() {
       _isBubbleVisible = false;
@@ -158,13 +286,15 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     });
     // Pequeno delay para garantir que o balão anterior suma antes de exibir o novo
     Future.delayed(const Duration(milliseconds: 50), () {
-      if (animationOverride == 'run') {
-        duckGame.playPlayAnimation();
-      } else if (animationOverride == 'dead') {
-        duckGame.forceDeadAnimation();
-      } else if (!_talkAnimationPlayed) {
-        duckGame.playTalkAnimation();
-        _talkAnimationPlayed = true;
+      if (duckGame.hasLoaded) {
+        if (animationOverride == 'run') {
+          duckGame.playPlayAnimation();
+        } else if (animationOverride == 'dead') {
+          duckGame.forceDeadAnimation();
+        } else if (!_talkAnimationPlayed) {
+          duckGame.playTalkAnimation();
+          _talkAnimationPlayed = true;
+        }
       }
       setState(() {
         _currentBubbleMessage = message;
@@ -179,7 +309,15 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
                 _isBubbleVisible = false;
                 _talkAnimationPlayed = false;
               });
-              duckGame.forceIdleAnimation();
+              // Verifica se o pato está morto antes de voltar para animação idle
+              if (duckGame.hasLoaded) {
+                final currentStatus = ref.read(duckStatusProvider);
+                if (currentStatus.isDead) {
+                  duckGame.forceDeadAnimation();
+                } else {
+                  duckGame.forceIdleAnimation();
+                }
+              }
             }
           });
         }
@@ -245,32 +383,60 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   @override
   Widget build(BuildContext context) {
     final duckStatus = ref.watch(duckStatusProvider);
+
+    // Mostra loading enquanto não estiver completamente inicializado
     if (!_isInitialized) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        backgroundColor: const Color(0xFFE6F3FF),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                LocalizationStrings.get('loading_duck'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
     }
+
     return Scaffold(
       backgroundColor: const Color(0xFFE6F3FF),
-      body: Container(
-        padding: const EdgeInsets.all(4.0),
-        child: Column(
-          children: [
-            _buildBubbleArea(),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _buildDuckArea(),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: _buildControlsArea(duckStatus),
-                  ),
-                ],
+      body: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(4.0),
+          child: Column(
+            children: [
+              _buildBubbleArea(),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: _buildDuckArea(),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: _buildControlsArea(duckStatus),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            _buildChatArea(),
-          ],
+              _buildChatArea(),
+            ],
+          ),
         ),
       ),
     );
@@ -412,41 +578,59 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   Widget _buildControlsArea(DuckStatus duckStatus) {
     return Container(
       margin: const EdgeInsets.all(8.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildDraggableControl(
-            icon: Icons.restaurant,
-            label: LocalizationStrings.get('feed'),
-            data: 'feed',
-            color: _getStatusColor(duckStatus.hunger),
-            isDragging: _isDraggingFood,
-            onDragStarted: () => setState(() => _isDraggingFood = true),
-            onDragCompleted: () => setState(() => _isDraggingFood = false),
-            onDragCancelled: () => setState(() => _isDraggingFood = false),
-          ),
-          _buildDraggableControl(
-            icon: Icons.cleaning_services,
-            label: LocalizationStrings.get('clean'),
-            data: 'clean',
-            color: _getStatusColor(duckStatus.cleanliness),
-            isDragging: _isDraggingClean,
-            onDragStarted: () => setState(() => _isDraggingClean = true),
-            onDragCompleted: () => setState(() => _isDraggingClean = false),
-            onDragCancelled: () => setState(() => _isDraggingClean = false),
-          ),
-          _buildDraggableControl(
-            icon: Icons.sports_esports,
-            label: LocalizationStrings.get('play'),
-            data: 'play',
-            color: _getStatusColor(duckStatus.happiness),
-            isDragging: _isDraggingPlay,
-            onDragStarted: () => setState(() => _isDraggingPlay = true),
-            onDragCompleted: () => setState(() => _isDraggingPlay = false),
-            onDragCancelled: () => setState(() => _isDraggingPlay = false),
-          ),
-          _buildSettingsButton(),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildDraggableControl(
+                    icon: Icons.restaurant,
+                    label: LocalizationStrings.get('feed'),
+                    data: 'feed',
+                    color: _getStatusColor(duckStatus.hunger),
+                    isDragging: _isDraggingFood,
+                    onDragStarted: () => setState(() => _isDraggingFood = true),
+                    onDragCompleted: () =>
+                        setState(() => _isDraggingFood = false),
+                    onDragCancelled: () =>
+                        setState(() => _isDraggingFood = false),
+                  ),
+                  _buildDraggableControl(
+                    icon: Icons.cleaning_services,
+                    label: LocalizationStrings.get('clean'),
+                    data: 'clean',
+                    color: _getStatusColor(duckStatus.cleanliness),
+                    isDragging: _isDraggingClean,
+                    onDragStarted: () =>
+                        setState(() => _isDraggingClean = true),
+                    onDragCompleted: () =>
+                        setState(() => _isDraggingClean = false),
+                    onDragCancelled: () =>
+                        setState(() => _isDraggingClean = false),
+                  ),
+                  _buildDraggableControl(
+                    icon: Icons.sports_esports,
+                    label: LocalizationStrings.get('play'),
+                    data: 'play',
+                    color: _getStatusColor(duckStatus.happiness),
+                    isDragging: _isDraggingPlay,
+                    onDragStarted: () => setState(() => _isDraggingPlay = true),
+                    onDragCompleted: () =>
+                        setState(() => _isDraggingPlay = false),
+                    onDragCancelled: () =>
+                        setState(() => _isDraggingPlay = false),
+                  ),
+                  _buildSettingsButton(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -578,7 +762,13 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
             ),
             onPressed: () {
               ref.read(duckStatusProvider.notifier).revive();
-              duckGame.forceReviveAnimation();
+              if (duckGame.hasLoaded) {
+                duckGame.forceReviveAnimation();
+                // Aguarda um pouco para que o status seja atualizado
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  duckGame.updateSpriteStatus();
+                });
+              }
               setState(() {
                 _showBubbleMessage(LocalizationStrings.get('happy'));
               });

@@ -14,6 +14,9 @@ class PeriodicTasksManager {
   Timer? _autoCommentTimer; // Timer para enviar comentários automáticos
   Timer? _cleanupTimer; // Timer para executar tarefas de limpeza
 
+  // Flag para indicar se as tarefas estão pausadas devido à morte do pato
+  bool _isPausedDueToDeath = false;
+
   // Callbacks para notificar componentes externos sobre eventos
   Function(String)? onStatusUpdate; // Callback para atualizações de status
   Function(String)? onAutoComment; // Callback para comentários automáticos
@@ -40,6 +43,28 @@ class PeriodicTasksManager {
     _cleanupTimer?.cancel();
   }
 
+  /// Pausa todas as tarefas devido à morte do pato
+  void pauseTasksDueToDeath() {
+    if (_isPausedDueToDeath) return; // Já pausado
+
+    debugPrint('[PeriodicTasks] Pausando tarefas - pato morreu');
+    _isPausedDueToDeath = true;
+    _autoCommentTimer?.cancel(); // Para comentários automáticos
+    // Mantém apenas o timer de status para detectar ressurreição
+  }
+
+  /// Retoma todas as tarefas após ressurreição do pato
+  void resumeTasksAfterRevival() {
+    if (!_isPausedDueToDeath) return; // Não estava pausado
+
+    debugPrint('[PeriodicTasks] Retomando tarefas - pato reviveu');
+    _isPausedDueToDeath = false;
+    _startAutoCommentTimer(); // Retoma comentários automáticos
+  }
+
+  /// Verifica se as tarefas estão pausadas devido à morte
+  bool get isPausedDueToDeath => _isPausedDueToDeath;
+
   void _startStatusUpdateTimer() {
     _statusUpdateTimer?.cancel();
     _statusUpdateTimer = Timer.periodic(
@@ -57,8 +82,18 @@ class PeriodicTasksManager {
 
   void _scheduleNextAutoComment() {
     _autoCommentTimer?.cancel();
+
+    // Não agenda se as tarefas estão pausadas devido à morte
+    if (_isPausedDueToDeath) {
+      debugPrint('[PeriodicTasks] Não agendando comentário - pato morto');
+      return;
+    }
+
     final randomMinutes = Random().nextInt(11) + 10; // 10-20 minutos
     final duration = Duration(minutes: randomMinutes);
+    debugPrint(
+        '[PeriodicTasks] Próximo comentário automático em $randomMinutes minutos');
+
     _autoCommentTimer = Timer(duration, () async {
       await _sendAutoComment();
       _scheduleNextAutoComment();
@@ -77,13 +112,28 @@ class PeriodicTasksManager {
 
   Future<void> _updateDuckStatus() async {
     try {
+      final previousDeathStatus = duckStatusNotifier.state.isDead;
+
       // Atualiza o status do pato usando o notifier do Riverpod
       duckStatusNotifier.updateStatus();
       final duckStatus = duckStatusNotifier.state;
-      if (duckStatus.isDead) {
+
+      // Verifica mudanças no status de morte
+      if (!previousDeathStatus && duckStatus.isDead) {
+        // Pato acabou de morrer
+        pauseTasksDueToDeath();
         onDeathDetected?.call();
         return;
+      } else if (previousDeathStatus && !duckStatus.isDead) {
+        // Pato acabou de reviver
+        resumeTasksAfterRevival();
       }
+
+      // Se o pato está morto, não faz mais nada
+      if (duckStatus.isDead) {
+        return;
+      }
+
       onStatusUpdate?.call(duckStatus.getMood());
     } catch (e) {
       debugPrint('Error updating duck status: $e');
@@ -92,14 +142,20 @@ class PeriodicTasksManager {
 
   Future<void> _sendAutoComment() async {
     try {
+      final duckStatus = duckStatusNotifier.state;
+
+      // Não envia comentários se o pato estiver morto ou tarefas pausadas
+      if (duckStatus.isDead || _isPausedDueToDeath) {
+        debugPrint(
+            '[PeriodicTasks] Comentário automático cancelado - pato morto');
+        return;
+      }
+
       final isApiConfigured = await ChatService.isApiKeyConfigured();
       if (!isApiConfigured) {
         return;
       }
-      final duckStatus = duckStatusNotifier.state;
-      if (duckStatus.isDead) {
-        return;
-      }
+
       // Verifica necessidades críticas e envia mensagem correspondente
       if (duckStatus.hunger < 30) {
         onAutoComment?.call(LocalizationStrings.get('hungry'));
@@ -146,14 +202,25 @@ class PeriodicTasksManager {
   }
 
   void pauseAutoComments() {
+    if (_isPausedDueToDeath) {
+      debugPrint(
+          '[PeriodicTasks] Não pode pausar comentários - pato está morto');
+      return;
+    }
     _autoCommentTimer?.cancel();
   }
 
   void resumeAutoComments() {
+    if (_isPausedDueToDeath) {
+      debugPrint(
+          '[PeriodicTasks] Não pode retomar comentários - pato está morto');
+      return;
+    }
     _scheduleNextAutoComment();
   }
 
   bool get areAutoCommentsActive => _autoCommentTimer?.isActive ?? false;
+  bool get areTasksPausedDueToDeath => _isPausedDueToDeath;
   Duration get statusUpdateInterval => const Duration(seconds: 30);
   Map<String, int> get autoCommentIntervalRange => {
         'min': 10,
@@ -162,6 +229,7 @@ class PeriodicTasksManager {
 
   void dispose() {
     stopAllTasks();
+    _isPausedDueToDeath = false;
     onStatusUpdate = null;
     onAutoComment = null;
     onDeathDetected = null;
