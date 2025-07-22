@@ -45,6 +45,9 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   late AnimationController _bubbleAnimationController;
   late Animation<double> _bubbleAnimation;
 
+  // Timer para controlar a duração do balão
+  Timer? _bubbleTimer;
+
   ValueNotifier<String> get duckNameNotifier =>
       TamagotchiWidget.duckNameNotifier;
 
@@ -81,6 +84,7 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
 
   @override
   void dispose() {
+    _bubbleTimer?.cancel();
     duckNameNotifier.dispose();
     _chatController.dispose();
     periodicTasks.dispose();
@@ -90,6 +94,9 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
 
   Future<void> _initializeWidget() async {
     try {
+      // Inicializa o histórico de conversa
+      await ChatService.initializeHistory();
+
       // Inicializa jogo e vincula com status do pato
       duckGame = DuckGame(duckStatus: ref.read(duckStatusProvider));
 
@@ -275,6 +282,9 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
 
   void _showBubbleMessage(String message,
       {String? animationOverride, bool playSound = true}) {
+    // Cancela o timer anterior se existir
+    _bubbleTimer?.cancel();
+
     // Reproduz som apenas se solicitado (false para mensagens de morte na inicialização)
     if (playSound) {
       FlameAudio.play('quack.wav');
@@ -301,7 +311,9 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
         _isBubbleVisible = true;
       });
       _bubbleAnimationController.forward();
-      Timer(const Duration(seconds: 30), () {
+
+      // Cria um novo timer e o armazena na variável
+      _bubbleTimer = Timer(const Duration(seconds: 30), () {
         if (mounted) {
           _bubbleAnimationController.reverse().then((_) {
             if (mounted) {
@@ -770,7 +782,10 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
                 });
               }
               setState(() {
-                _showBubbleMessage(LocalizationStrings.get('happy'));
+                // Aguarda a animação 'fly' terminar antes de mostrar a mensagem
+                Future.delayed(const Duration(milliseconds: 1000), () {
+                  _showBubbleMessage(LocalizationStrings.get('happy'));
+                });
               });
             },
           ),

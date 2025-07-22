@@ -37,19 +37,14 @@ class LocalizationStrings {
       'feed': 'Alimentar', // Texto para o botão de ação alimentar
       'clean': 'Limpar', // Texto para o botão de ação limpar
       'play': 'Brincar', // Texto para o botão de ação brincar
-      'settings': 'Configurações', // Texto para o botão de configurações
       'chat_placeholder':
           'Digite aqui...', // Texto de placeholder para o campo de entrada do chat
-      'chat_send': 'Enviar', // Texto para o botão de envio do chat
-      'chat_max_chars':
-          'Máx 50 caracteres', // Mensagem indicando o número máximo de caracteres para entrada do chat
 
       // Mensagens de status do pato
       'hungry': 'Estou com fome!', // Mensagem do pato quando está com fome
       'dirty': 'Preciso de um banho!', // Mensagem do pato quando está sujo
       'sad': 'Estou entediado!', // Mensagem do pato quando está triste
       'happy': 'Eba!', // Mensagem do pato quando está feliz
-      'sleeping': 'Zzz...', // Mensagem do pato quando está dormindo
 
       // Mensagens relacionadas à morte
       'died_hunger': 'Morri de fome... 😵', // Mensagem de morte por fome
@@ -58,7 +53,6 @@ class LocalizationStrings {
       'died_sadness':
           'Morri de tristeza... 😵', // Mensagem de morte por tristeza
       'revive': 'Reviver', // Texto para o botão reviver
-      'death_title': 'Oh não!', // Título para o diálogo de morte
 
       // Explicações de morte
       'explanation_hunger': 'Não foi alimentado por mais de 24 horas.',
@@ -81,7 +75,6 @@ class LocalizationStrings {
       // Strings relacionadas ao chat
       'no_api_key':
           'Por favor, adicione sua chave API do ChatGPT nas configurações para conversar comigo!', // Mensagem quando a chave API está faltando
-      'thinking': 'Pensando...', // Mensagem exibida quando a IA está pensando
       'error_chat':
           'Desculpe, não consegui responder agora.', // Mensagem de erro genérica do chat
 
@@ -106,15 +99,14 @@ class LocalizationStrings {
           'Por favor, digite algo primeiro!', // Erro de validação para mensagens vazias
 
       // Strings de aviso de morte
-      'warning_title': 'Aviso Urgente!',
       'warning_hunger':
           'Estou com muita fome! Por favor, me alimente logo ou posso morrer!',
       'warning_dirty':
           'Estou muito sujo! Por favor, me limpe logo ou posso morrer!',
       'warning_sadness':
           'Estou muito triste! Por favor, brinque comigo logo ou posso morrer!',
-      'understand': 'Entendi',
-      // Novas strings da página de configurações
+
+      // Strings da página de configurações
       'api_key_not_configured': 'Chave API não configurada',
       'api_key_configured': 'Chave API configurada',
       'api_key_invalid': 'Formato de chave API inválido',
@@ -123,8 +115,6 @@ class LocalizationStrings {
       'exit_app': 'Sair do Aplicativo',
       'duck_name': 'Nome do Pato',
       'duck_name_hint': 'Digite o nome do seu pato',
-      'duck_name_saved': 'Nome do pato salvo com sucesso!',
-      'duck_name_error': 'Erro ao salvar o nome do pato.',
       'duck_name_default': '',
 
       // Strings da tela de loading
@@ -135,24 +125,19 @@ class LocalizationStrings {
       'feed': 'Feed',
       'clean': 'Clean',
       'play': 'Play',
-      'settings': 'Settings',
       'chat_placeholder': 'Type here...',
-      'chat_send': 'Send',
-      'chat_max_chars': 'Max 50 chars',
 
       // Duck status messages
       'hungry': 'I\'m hungry!',
       'dirty': 'I need a bath!',
       'sad': 'I\'m bored!',
       'happy': 'Yay!',
-      'sleeping': 'Zzz...',
 
       // Death-related messages
       'died_hunger': 'I died of hunger... 😵',
       'died_dirty': 'I died from being too dirty... 😵',
       'died_sadness': 'I died of sadness... 😵',
       'revive': 'Revive',
-      'death_title': 'Oh no!',
 
       // Death explanations
       'explanation_hunger': 'Wasn\'t fed for over 24 hours.',
@@ -173,7 +158,6 @@ class LocalizationStrings {
       // Chat related strings
       'no_api_key':
           'Please add your ChatGPT API key in settings to chat with me!',
-      'thinking': 'Thinking...',
       'error_chat': 'Sorry, I couldn\'t answer right now.',
 
       // Auto-comment strings
@@ -190,13 +174,12 @@ class LocalizationStrings {
       'empty_message': 'Please type something first!',
 
       // Death warning strings
-      'warning_title': 'Urgent Warning!',
       'warning_hunger': 'I\'m very hungry! Please feed me soon or I might die!',
       'warning_dirty': 'I\'m very dirty! Please clean me soon or I might die!',
       'warning_sadness':
           'I\'m very sad! Please play with me soon or I might die!',
-      'understand': 'Got it',
-      // New settings page strings
+
+      // Settings page strings
       'api_key_not_configured': 'API Key not configured',
       'api_key_configured': 'API Key configured',
       'api_key_invalid': 'Invalid API Key format',
@@ -205,8 +188,6 @@ class LocalizationStrings {
       'exit_app': 'Exit Application',
       'duck_name': 'Duck Name',
       'duck_name_hint': 'Enter your duck\'s name',
-      'duck_name_saved': 'Duck name saved successfully!',
-      'duck_name_error': 'Error saving duck name.',
       'duck_name_default': '',
 
       // Loading screen strings
