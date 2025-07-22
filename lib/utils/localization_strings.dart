@@ -48,7 +48,7 @@ class LocalizationStrings {
       'hungry': 'Estou com fome!', // Mensagem do pato quando está com fome
       'dirty': 'Preciso de um banho!', // Mensagem do pato quando está sujo
       'sad': 'Estou entediado!', // Mensagem do pato quando está triste
-      'happy': 'Estou feliz!', // Mensagem do pato quando está feliz
+      'happy': 'Eba!', // Mensagem do pato quando está feliz
       'sleeping': 'Zzz...', // Mensagem do pato quando está dormindo
 
       // Mensagens relacionadas à morte
@@ -141,7 +141,7 @@ class LocalizationStrings {
       'hungry': 'I\'m hungry!',
       'dirty': 'I need a bath!',
       'sad': 'I\'m bored!',
-      'happy': 'I\'m happy!',
+      'happy': 'Yay!',
       'sleeping': 'Zzz...',
 
       // Death-related messages

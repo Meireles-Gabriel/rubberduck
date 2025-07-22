@@ -10,7 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   # Game engine for animations / Engine de jogo para animações
-  flame: ^1.30.0
+  flame: 
+  flame_audio: ^2.11.7
   # Window management for borderless widget / Gerenciamento de janela para widget sem bordas
   window_manager: ^0.5.0
   bitsdojo_window: ^0.1.6
@@ -43,4 +44,5 @@ flutter:
     - assets/images/background.png
     - assets/images/sprites/
     - assets/images/ui/
-    - assets/sounds/
+    - assets/audio/
+    - assets/audio/quack.wav

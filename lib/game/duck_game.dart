@@ -76,13 +76,21 @@ class DuckGame extends FlameGame {
   }
 
   void forceDeadAnimation() {
-    duckSprite.playAnimation('dead');
+    duckSprite.playAnimation('dead', force: true);
     randomAnimationTimer?.cancel();
   }
 
   void forceReviveAnimation() {
-    duckSprite.playAnimation('fly');
+    duckSprite.playAnimation('fly', force: true);
     startRandomAnimationTimer();
+  }
+
+  void playTalkAnimation() {
+    duckSprite.playAnimation('talk', force: true);
+  }
+
+  void forceIdleAnimation() {
+    duckSprite.playAnimation('idle', force: true);
   }
 
   @override
@@ -143,13 +151,13 @@ class DuckSprite extends SpriteAnimationComponent
       animations['blink'] =
           await _loadAnimation('duck_blink.png', 11, 0.3, loop: false);
       animations['fly'] =
-          await _loadAnimation('duck_fly.png', 4, 0.2, loop: false);
+          await _loadAnimation('duck_fly.png', 4, 0.15, loop: false);
       animations['look'] =
           await _loadAnimation('duck_look.png', 4, 0.5, loop: false);
       animations['run'] =
           await _loadAnimation('duck_run.png', 4, 0.2, loop: false);
       animations['talk'] =
-          await _loadAnimation('duck_talk.png', 3, 0.3, loop: true);
+          await _loadAnimation('duck_talk.png', 9, 0.15, loop: false);
       animations['dead'] =
           await _loadAnimation('duck_death.png', 4, 0.3, loop: true);
     } catch (e) {
@@ -192,9 +200,17 @@ class DuckSprite extends SpriteAnimationComponent
     };
   }
 
-  void playAnimation(String animationName) {
+  void playAnimation(String animationName, {bool force = false}) {
     if (!animations.containsKey(animationName)) {
       animationName = 'idle';
+    }
+    // Não sobrescreve 'dead' se estiver morto, a menos que force
+    if (duckStatus.isDead && animationName != 'dead' && !force) {
+      return;
+    }
+    // Não sobrescreve 'talk' se já está falando, a menos que force
+    if (currentAnimation == 'talk' && !force && animationName != 'dead') {
+      return;
     }
     currentAnimation = animationName;
     animation = animations[animationName];
@@ -206,9 +222,17 @@ class DuckSprite extends SpriteAnimationComponent
             animationName == 'run')) {
       animationTicker!.onComplete = () {
         if (duckStatus.isDead) {
-          playAnimation('dead');
+          playAnimation('dead', force: true);
         } else {
-          playAnimation('idle');
+          playAnimation('idle', force: true);
+        }
+      };
+    } else if (animationTicker != null && animationName == 'talk') {
+      animationTicker!.onComplete = () {
+        if (duckStatus.isDead) {
+          playAnimation('dead', force: true);
+        } else {
+          playAnimation('idle', force: true);
         }
       };
     } else if (animationTicker != null) {

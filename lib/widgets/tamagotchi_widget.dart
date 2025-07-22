@@ -9,6 +9,7 @@ import '../services/periodic_tasks.dart';
 import '../utils/localization_strings.dart';
 import 'settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flame_audio/flame_audio.dart';
 
 /// Widget principal do tamagotchi
 class TamagotchiWidget extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   late DuckGame duckGame;
   late PeriodicTasksManager periodicTasks;
   bool _isInitialized = false;
+  bool _talkAnimationPlayed = false;
 
   // Controladores para entrada de texto e captura de tela
   final TextEditingController _chatController = TextEditingController();
@@ -121,12 +123,14 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
 
   void _onDeathDetected() {
     if (mounted) {
+      duckGame.forceDeadAnimation();
       _showDeathDialog();
     }
   }
 
   void _showDeathDialog() {
     final duckStatus = ref.read(duckStatusProvider);
+
     String deathMessage;
     switch (duckStatus.deathCause) {
       case 'hunger':
@@ -141,25 +145,45 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
       default:
         deathMessage = LocalizationStrings.get('died_hunger');
     }
-    _showBubbleMessage(deathMessage);
+    _showBubbleMessage(deathMessage, animationOverride: 'dead');
+    duckGame.forceDeadAnimation();
   }
 
-  void _showBubbleMessage(String message) {
+  void _showBubbleMessage(String message, {String? animationOverride}) {
+    FlameAudio.play('quack.wav');
+    final wasVisible = _isBubbleVisible;
     setState(() {
-      _currentBubbleMessage = message;
-      _isBubbleVisible = true;
+      _isBubbleVisible = false;
+      if (!wasVisible) _talkAnimationPlayed = false;
     });
-    _bubbleAnimationController.forward();
-    Timer(const Duration(seconds: 30), () {
-      if (mounted) {
-        _bubbleAnimationController.reverse().then((_) {
-          if (mounted) {
-            setState(() {
-              _isBubbleVisible = false;
-            });
-          }
-        });
+    // Pequeno delay para garantir que o balão anterior suma antes de exibir o novo
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (animationOverride == 'run') {
+        duckGame.playPlayAnimation();
+      } else if (animationOverride == 'dead') {
+        duckGame.forceDeadAnimation();
+      } else if (!_talkAnimationPlayed) {
+        duckGame.playTalkAnimation();
+        _talkAnimationPlayed = true;
       }
+      setState(() {
+        _currentBubbleMessage = message;
+        _isBubbleVisible = true;
+      });
+      _bubbleAnimationController.forward();
+      Timer(const Duration(seconds: 30), () {
+        if (mounted) {
+          _bubbleAnimationController.reverse().then((_) {
+            if (mounted) {
+              setState(() {
+                _isBubbleVisible = false;
+                _talkAnimationPlayed = false;
+              });
+              duckGame.forceIdleAnimation();
+            }
+          });
+        }
+      });
     });
   }
 
@@ -174,7 +198,6 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     setState(() {
       _isChatLoading = true;
     });
-    _showBubbleMessage(LocalizationStrings.get('thinking'));
     try {
       final response =
           await ChatService.sendMessage(message, includeScreenshot: true);
@@ -196,15 +219,18 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     switch (action) {
       case 'feed':
         notifier.feed();
-        _showBubbleMessage(LocalizationStrings.get('fed_message'));
+        _showBubbleMessage(LocalizationStrings.get('fed_message'),
+            animationOverride: 'run');
         break;
       case 'clean':
         notifier.clean();
-        _showBubbleMessage(LocalizationStrings.get('cleaned_message'));
+        _showBubbleMessage(LocalizationStrings.get('cleaned_message'),
+            animationOverride: 'run');
         break;
       case 'play':
         notifier.play();
-        _showBubbleMessage(LocalizationStrings.get('played_message'));
+        _showBubbleMessage(LocalizationStrings.get('played_message'),
+            animationOverride: 'run');
         break;
     }
   }

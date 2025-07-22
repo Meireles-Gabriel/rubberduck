@@ -5,6 +5,7 @@ import 'dart:math';
 import '../services/chat_service.dart';
 import '../game/duck_status.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/localization_strings.dart';
 
 /// Gerenciador de tarefas periódicas
 class PeriodicTasksManager {
@@ -99,6 +100,20 @@ class PeriodicTasksManager {
       if (duckStatus.isDead) {
         return;
       }
+      // Verifica necessidades críticas e envia mensagem correspondente
+      if (duckStatus.hunger < 30) {
+        onAutoComment?.call(LocalizationStrings.get('hungry'));
+        return;
+      }
+      if (duckStatus.cleanliness < 30) {
+        onAutoComment?.call(LocalizationStrings.get('dirty'));
+        return;
+      }
+      if (duckStatus.happiness < 30) {
+        onAutoComment?.call(LocalizationStrings.get('sad'));
+        return;
+      }
+      // Caso contrário, envia comentário automático normal
       final comment = await ChatService.sendAutomaticComment();
       onAutoComment?.call(comment);
     } catch (e) {
