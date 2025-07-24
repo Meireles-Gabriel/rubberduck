@@ -71,6 +71,11 @@ class LocalizationStrings {
           'Digite sua chave API da OpenAI aqui', // Texto de dica para o campo de entrada da chave API
       'close': 'Fechar', // Texto para o botão fechar
       'save': 'Salvar', // Texto para o botão salvar
+      'copy': 'Copiar', // Texto para o botão copiar
+      'duck_message':
+          'Mensagem do Pato', // Título do dialog da mensagem do pato
+      'text_copied':
+          'Texto copiado para a área de transferência!', // Mensagem de confirmação de cópia
 
       // Strings relacionadas ao chat
       'no_api_key':
@@ -154,6 +159,9 @@ class LocalizationStrings {
       'api_key_hint': 'Enter your OpenAI API key here',
       'close': 'Close',
       'save': 'Save',
+      'copy': 'Copy', // Copy button text
+      'duck_message': 'Duck Message', // Duck message dialog title
+      'text_copied': 'Text copied to clipboard!', // Copy confirmation message
 
       // Chat related strings
       'no_api_key':

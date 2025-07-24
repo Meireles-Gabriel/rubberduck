@@ -81,19 +81,28 @@ class DuckGame extends FlameGame {
   // Métodos de animação para serem chamados externamente
   void playFeedAnimation() {
     if (_isLoaded && duckSprite != null) {
-      duckSprite!.playAnimation('run');
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null && !currentStatus.isDead) {
+        duckSprite!.playAnimation('run');
+      }
     }
   }
 
   void playCleanAnimation() {
     if (_isLoaded && duckSprite != null) {
-      duckSprite!.playAnimation('run');
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null && !currentStatus.isDead) {
+        duckSprite!.playAnimation('run');
+      }
     }
   }
 
   void playPlayAnimation() {
     if (_isLoaded && duckSprite != null) {
-      duckSprite!.playAnimation('run');
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null && !currentStatus.isDead) {
+        duckSprite!.playAnimation('run');
+      }
     }
   }
 
@@ -112,6 +121,8 @@ class DuckGame extends FlameGame {
 
   void forceReviveAnimation() {
     if (_isLoaded && duckSprite != null) {
+      // Atualiza o status primeiro para garantir sincronização
+      updateSpriteStatus();
       duckSprite!.playAnimation('fly', force: true);
     }
     startRandomAnimationTimer();
@@ -135,10 +146,20 @@ class DuckGame extends FlameGame {
       final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
       if (currentStatus != null) {
         // Atualiza a referência do status no sprite
-        // Note: Isso não é ideal, mas necessário devido à arquitetura atual
+        duckSprite!.updateStatusReference(currentStatus);
         duckSprite!.updateAnimationBasedOnStatus();
+
+        // Se o pato acabou de reviver, reinicia o timer de animações aleatórias
+        if (!currentStatus.isDead && (randomAnimationTimer?.isActive != true)) {
+          startRandomAnimationTimer();
+        }
       }
     }
+  }
+
+  /// Força atualização do status e reposiciona animações
+  void forceStatusUpdate() {
+    updateSpriteStatus();
   }
 
   @override
@@ -171,7 +192,7 @@ class DuckSprite extends SpriteAnimationComponent
     with HasGameReference<DuckGame> {
   late Map<String, SpriteAnimation> animations;
   String currentAnimation = 'idle';
-  final DuckStatus duckStatus;
+  DuckStatus duckStatus;
 
   DuckSprite({required this.duckStatus});
 
@@ -281,15 +302,28 @@ class DuckSprite extends SpriteAnimationComponent
         // Para animação 'fly', sempre vai para 'idle' (usada na revivificação)
         if (animationName == 'fly') {
           playAnimation('idle', force: true);
-        } else if (duckStatus.isDead) {
-          playAnimation('dead', force: true);
         } else {
-          playAnimation('idle', force: true);
+          // Verifica o status mais atual possível no momento da execução
+          final currentStatus =
+              game.duckStatus ?? game.ref?.read(game.duckStatusProvider!);
+          if (currentStatus?.isDead == true) {
+            playAnimation('dead', force: true);
+          } else {
+            playAnimation('idle', force: true);
+          }
         }
       };
     } else if (animationTicker != null && animationName == 'talk') {
       animationTicker!.onComplete = () {
-        if (duckStatus.isDead) {
+        // Força uma atualização do status antes de decidir a próxima animação
+        final currentStatus =
+            game.duckStatus ?? game.ref?.read(game.duckStatusProvider!);
+        // Atualiza a referência local do status
+        if (currentStatus != null) {
+          duckStatus = currentStatus;
+        }
+
+        if (currentStatus?.isDead == true) {
           playAnimation('dead', force: true);
         } else {
           playAnimation('idle', force: true);
@@ -301,7 +335,10 @@ class DuckSprite extends SpriteAnimationComponent
   }
 
   void playRandomAnimation() {
-    if (duckStatus.isDead) {
+    // Verifica o status mais atual possível
+    final currentStatus =
+        game.duckStatus ?? game.ref?.read(game.duckStatusProvider!);
+    if (currentStatus?.isDead == true) {
       playAnimation('dead');
       return;
     }
@@ -312,7 +349,10 @@ class DuckSprite extends SpriteAnimationComponent
   }
 
   void updateAnimationBasedOnStatus() {
-    if (duckStatus.isDead) {
+    // Verifica o status mais atual possível
+    final currentStatus =
+        game.duckStatus ?? game.ref?.read(game.duckStatusProvider!);
+    if (currentStatus?.isDead == true) {
       playAnimation('dead');
       return;
     }
@@ -320,5 +360,10 @@ class DuckSprite extends SpriteAnimationComponent
     if (currentAnimation == 'dead') {
       playAnimation('idle', force: true);
     }
+  }
+
+  /// Atualiza a referência do status do pato
+  void updateStatusReference(DuckStatus newStatus) {
+    duckStatus = newStatus;
   }
 }

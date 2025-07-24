@@ -60,6 +60,11 @@ class PeriodicTasksManager {
     debugPrint('[PeriodicTasks] Retomando tarefas - pato reviveu');
     _isPausedDueToDeath = false;
     _startAutoCommentTimer(); // Retoma comentários automáticos
+
+    // Força atualização do status para sincronizar o estado
+    Future.delayed(const Duration(milliseconds: 500), () {
+      forceStatusUpdate();
+    });
   }
 
   /// Verifica se as tarefas estão pausadas devido à morte

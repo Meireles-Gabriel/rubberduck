@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flame/game.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,7 +110,12 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
       // Verifica imediatamente se o pato está morto para pausar tarefas se necessário
       final currentStatus = ref.read(duckStatusProvider);
       if (currentStatus.isDead) {
+        debugPrint(
+            '[TamagotchiWidget] Pato morto na inicialização - pausando tarefas');
         periodicTasks.pauseTasksDueToDeath();
+      } else {
+        debugPrint(
+            '[TamagotchiWidget] Pato vivo na inicialização - tarefas normais');
       }
 
       _bubbleAnimationController = AnimationController(
@@ -289,19 +295,18 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     if (playSound) {
       FlameAudio.play('quack.wav');
     }
-    final wasVisible = _isBubbleVisible;
     setState(() {
       _isBubbleVisible = false;
-      if (!wasVisible) _talkAnimationPlayed = false;
+      // Reset da flag sempre que um novo balão é exibido
+      _talkAnimationPlayed = false;
     });
     // Pequeno delay para garantir que o balão anterior suma antes de exibir o novo
     Future.delayed(const Duration(milliseconds: 50), () {
       if (duckGame.hasLoaded) {
-        if (animationOverride == 'run') {
-          duckGame.playPlayAnimation();
-        } else if (animationOverride == 'dead') {
+        if (animationOverride == 'dead') {
           duckGame.forceDeadAnimation();
-        } else if (!_talkAnimationPlayed) {
+        } else if (animationOverride != 'run' && !_talkAnimationPlayed) {
+          // Só toca animação talk se não for uma ação de cuidado
           duckGame.playTalkAnimation();
           _talkAnimationPlayed = true;
         }
@@ -369,16 +374,19 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     switch (action) {
       case 'feed':
         notifier.feed();
+        duckGame.playFeedAnimation();
         _showBubbleMessage(LocalizationStrings.get('fed_message'),
             animationOverride: 'run');
         break;
       case 'clean':
         notifier.clean();
+        duckGame.playCleanAnimation();
         _showBubbleMessage(LocalizationStrings.get('cleaned_message'),
             animationOverride: 'run');
         break;
       case 'play':
         notifier.play();
+        duckGame.playPlayAnimation();
         _showBubbleMessage(LocalizationStrings.get('played_message'),
             animationOverride: 'run');
         break;
@@ -390,6 +398,77 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     const badColor = Color(0xFFE8A39D);
     final t = value / 100;
     return Color.lerp(badColor, goodColor, t)!;
+  }
+
+  void _showBubbleDialog() {
+    if (_currentBubbleMessage.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(8.0),
+          child: Container(
+            width: double.maxFinite,
+            height: double.maxFinite,
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        _currentBubbleMessage,
+                        style: const TextStyle(fontSize: 14, height: 1.4),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(
+                        LocalizationStrings.get('close'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await Clipboard.setData(
+                            ClipboardData(text: _currentBubbleMessage));
+                      },
+                      icon: const Icon(Icons.copy, size: 12),
+                      label: Text(
+                        LocalizationStrings.get('copy'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -464,35 +543,38 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
               builder: (context, child) {
                 return Transform.scale(
                   scale: _bubbleAnimation.value,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(26),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: SizedBox(
-                      width: 160,
-                      height: 50,
-                      child: Center(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 0),
-                            child: Text(
-                              _currentBubbleMessage,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                height: 1.2,
+                  child: GestureDetector(
+                    onTap: _showBubbleDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(26),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox(
+                        width: 160,
+                        height: 50,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 0),
+                              child: Text(
+                                _currentBubbleMessage,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.2,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
@@ -773,13 +855,17 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
               ),
             ),
             onPressed: () {
+              FlameAudio.play('piu.wav');
               ref.read(duckStatusProvider.notifier).revive();
+
+              // Retoma as tarefas periódicas imediatamente após reviver
+              periodicTasks.resumeTasksAfterRevival();
+
               if (duckGame.hasLoaded) {
+                // Atualiza o status do sprite imediatamente após reviver
+                duckGame.updateSpriteStatus();
+                // Executa a animação de revivificação
                 duckGame.forceReviveAnimation();
-                // Aguarda um pouco para que o status seja atualizado
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  duckGame.updateSpriteStatus();
-                });
               }
               setState(() {
                 // Aguarda a animação 'fly' terminar antes de mostrar a mensagem
