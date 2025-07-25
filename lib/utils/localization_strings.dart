@@ -1,31 +1,34 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Strings de localização para o app
+/// Sistema de localização para suporte multi-idioma do pet virtual
+/// Essencial para proporcionar experiência nativa aos usuários de diferentes regiões
 class LocalizationStrings {
-  // Armazena o idioma atualmente selecionado, padrão é 'pt_BR'
+  // Idioma atual carregado dinamicamente para mudanças em tempo real
   static String _currentLanguage = 'pt_BR';
-  // Instância de SharedPreferences para persistir configurações de idioma
+  // SharedPreferences para persistir preferência de idioma entre sessões
   static SharedPreferences? _prefs;
 
-  /// Inicializa o sistema de localização carregando o idioma salvo do SharedPreferences.
+  /// Inicialização obrigatória para carregar configurações persistidas
+  /// Deve ser chamado antes de construir qualquer UI com texto localizado
   static Future<void> init() async {
     _prefs = await SharedPreferences
-        .getInstance(); // Obtém a instância de SharedPreferences
+        .getInstance(); // Acesso ao armazenamento local do sistema
     _currentLanguage = _prefs?.getString('language') ??
-        'pt_BR'; // Define o idioma atual, padronizando para 'pt_BR' se não encontrado
+        'pt_BR'; // Carrega idioma salvo ou usa português como padrão
   }
 
-  /// Define o idioma da aplicação e o persiste no SharedPreferences.
+  /// Permite mudança de idioma em tempo real com persistência automática
   static Future<void> setLanguage(String language) async {
-    _currentLanguage = language; // Atualiza o idioma atual
+    _currentLanguage = language; // Atualiza estado em memória
     await _prefs?.setString(
-        'language', language); // Salva o novo idioma no SharedPreferences
+        'language', language); // Persiste para próximas sessões
   }
 
-  /// Getter para o idioma atualmente ativo.
+  /// Acesso ao idioma ativo para verificações condicionais
   static String get currentLanguage => _currentLanguage;
 
-  /// Recupera uma string localizada para uma dada chave. Falls back to 'pt_BR' if the key is not found in the current language, or returns the key itself if not found anywhere.
+  /// Sistema de fallback inteligente: idioma atual → português → chave original
+  /// Evita textos em branco ou crashes por strings não encontradas
   static String get(String key) {
     return _strings[_currentLanguage]?[key] ?? _strings['pt_BR']?[key] ?? key;
   }

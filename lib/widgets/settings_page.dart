@@ -5,7 +5,8 @@ import '../utils/localization_strings.dart';
 import '../services/chat_service.dart';
 import 'tamagotchi_widget.dart';
 
-/// Página de configurações para o pato tamagotchi
+/// Interface de configuração centralizada para personalização da experiência do usuário
+/// Necessária para permitir ajustes sem reinicializar o app e manter preferências
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -13,94 +14,95 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-/// Classe de estado para a SettingsPage
+/// Gerenciador de estado para configurações com validação e persistência
 class _SettingsPageState extends State<SettingsPage> {
-  // Controlador para o campo de texto da chave API
+  // Controllers necessários para capturar e validar input do usuário
   final TextEditingController _apiKeyController = TextEditingController();
-  // Controlador para o campo de texto do nome do pato
   final TextEditingController _duckNameController = TextEditingController();
 
-  // Variáveis de estado para gerenciar a UI e as configurações
-  bool _isLoading = false;
-  bool _apiKeyVisible = false;
-  String _apiKeyStatus = '';
+  // Estados de UI para feedback visual ao usuário
+  bool _isLoading = false; // Previne múltiplas operações simultâneas
+  bool _apiKeyVisible = false; // Segurança para não expor chave por acidente
+  String _apiKeyStatus = ''; // Feedback em tempo real sobre validade da chave
 
   @override
   void initState() {
     super.initState();
-    // Carrega as configurações quando o widget inicializa
+    // Carregamento imediato para exibir configurações atuais ao usuário
     _loadSettings();
   }
 
   @override
   void dispose() {
-    // Descarta o controlador da chave API quando o widget é removido
+    // Cleanup de controllers para prevenir vazamentos de memória
     _apiKeyController.dispose();
+    _duckNameController.dispose();
     super.dispose();
   }
 
-  /// Carrega as configurações do aplicativo das preferências compartilhadas, incluindo idioma e chave API.
-  /// Também verifica o status da chave API carregada.
+  /// Recupera configurações persistidas para exibir estado atual ao usuário
+  /// Necessário para evitar perda de configurações e mostrar valores atuais
   Future<void> _loadSettings() async {
     setState(() {
-      _isLoading = true;
+      _isLoading = true; // Indica carregamento para feedback visual
     });
 
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Recupera e define o nome do pato
+      // Carrega nome personalizado para mostrar identidade atual do pet
       final duckName = prefs.getString('duck_name') ??
           LocalizationStrings.get('duck_name_default');
       _duckNameController.text = duckName;
 
-      // Recupera e define a chave API
+      // Carrega chave API para mostrar se funcionalidade de chat está disponível
       final apiKey = prefs.getString('chatgpt_api_key') ?? '';
       _apiKeyController.text = apiKey;
 
-      // Verifica o status da chave API recuperada
+      // Validação imediata para informar status da funcionalidade de IA
       await _checkApiKeyStatus();
     } catch (e) {
       debugPrint('Error loading settings: $e');
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Remove indicador de carregamento
       });
     }
   }
 
-  /// Salva as configurações atuais do aplicativo nas preferências compartilhadas, incluindo idioma e chave API.
-  /// Exibe uma mensagem de sucesso ou erro para o usuário.
+  /// Persiste configurações do usuário para manter preferências entre sessões
+  /// Validação e feedback essenciais para confirmar sucesso das operações
   Future<void> _saveSettings() async {
     setState(() {
-      _isLoading = true;
+      _isLoading = true; // Previne múltiplas operações simultâneas
     });
 
     try {
-      // Salva a chave API usando ChatService
+      // Salva via ChatService para centralizar lógica de validação de API
       await ChatService.setApiKey(_apiKeyController.text.trim());
 
-      // Salva o nome do pato
+      // Persiste nome personalizado com fallback para evitar strings vazias
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
           'duck_name',
           _duckNameController.text.trim().isEmpty
               ? LocalizationStrings.get('duck_name_default')
               : _duckNameController.text.trim());
-      // Notifica o jogo para atualizar o nome do pato em tempo real
+
+      // Atualização em tempo real necessária para não exigir restart
       TamagotchiWidget.duckNameNotifier.value = _duckNameController.text.trim();
       setState(() {});
 
-      // Verifica novamente o status da chave API após salvar
+      // Revalidação pós-save para confirmar sucesso da operação
       await _checkApiKeyStatus();
 
-      // Mostra snackbar de sucesso
+      // Feedback positivo para confirmar sucesso ao usuário
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(LocalizationStrings.get('save_success')),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green, // Verde para sucesso
+            duration: const Duration(seconds: 2), // Curto para não incomodar
           ),
         );
       }
@@ -108,25 +110,25 @@ class _SettingsPageState extends State<SettingsPage> {
       debugPrint('Error saving settings: $e');
       setState(() {});
 
-      // Mostra snackbar de erro
+      // Feedback de erro essencial para debugging do usuário
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${LocalizationStrings.get('save_error')}$e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red, // Vermelho para erro
+            duration: const Duration(seconds: 3), // Mais tempo para ler erro
           ),
         );
       }
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Libera interface para novas operações
       });
     }
   }
 
-  /// Verifica a validade e o status da chave API inserida.
-  /// Atualiza [_apiKeyStatus] com base em se a chave está configurada ou tem um formato inválido.
+  /// Validação em tempo real para informar usuário sobre funcionalidade de IA
+  /// Feedback imediato necessário para evitar tentativas com chaves inválidas
   Future<void> _checkApiKeyStatus() async {
     final apiKey = _apiKeyController.text.trim();
 
@@ -137,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
 
-    // Validação básica para o formato da chave API
+    // Validação de formato para feedback rápido antes de tentar usar API
     if (apiKey.startsWith('sk-') && apiKey.length > 20) {
       setState(() {
         _apiKeyStatus = LocalizationStrings.get('api_key_configured');

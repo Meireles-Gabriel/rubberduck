@@ -9,49 +9,51 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../game/duck_status.dart';
 
-/// Componente do jogo do pato usando engine Flame
+/// Componente principal do jogo que gerencia as animações e comportamentos visuais do pet
+/// Flame engine necessária para performance suave de animações e controle de sprites
 class DuckGame extends FlameGame {
-  // Referência ao estado do pato (Riverpod)
+  // Referências ao estado compartilhado para sincronização entre UI e animações
   DuckStatus? duckStatus;
   StateNotifierProvider<DuckStatusNotifier, DuckStatus>? duckStatusProvider;
   WidgetRef? ref;
 
-  // Representa o sprite visual e as animações do pato no jogo
+  // Sprite principal que renderiza as animações do pato na tela
   DuckSprite? duckSprite;
 
-  // Flag para indicar se o jogo foi completamente carregado
+  // Flag crítica para evitar operações em jogo não inicializado
   bool _isLoaded = false;
 
-  // Timer responsável por agendar animações aleatórias para o pato
+  // Timer para animações periódicas que dão vida ao pet quando idle
   dart_async.Timer? randomAnimationTimer;
 
-  // Função de callback para notificar componentes externos sobre mudanças no humor ou status do pato
+  // Callback para comunicação com sistema de mensagens/UI externa
   Function(String)? onStatusUpdate;
 
   DuckGame({this.duckStatus, this.duckStatusProvider, this.ref});
 
-  /// Getter para verificar se o jogo foi completamente carregado
+  /// Verificação essencial para garantir segurança nas operações do jogo
   bool get hasLoaded => _isLoaded;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    // Background necessário para dar contexto visual e delimitar área do pet
     final background = BackgroundComponent();
     await add(background);
 
-    // Usa o estado do provider
+    // Inicialização do sprite principal com estado atual para sincronização
     final status = duckStatus ?? ref?.read(duckStatusProvider!);
     duckSprite = DuckSprite(duckStatus: status!);
     await add(duckSprite!);
 
-    // Aguarda um frame para garantir que a animação inicial seja carregada
-    // e então reposiciona o sprite no centro
+    // Delay necessário para garantir que Flame calcule tamanhos antes de posicionar
     await Future.delayed(Duration.zero);
     double centerX = (size.x - duckSprite!.size.x) / 2;
     double centerY = (size.y - duckSprite!.size.y) / 2;
     duckSprite!.position = Vector2(centerX, centerY);
 
     _isLoaded = true;
+    // Inicia animações aleatórias para dar vida ao pet quando não está sendo usado
     startRandomAnimationTimer();
   }
 
@@ -62,26 +64,40 @@ class DuckGame extends FlameGame {
       final delay = Duration(seconds: Random().nextInt(20) + 10);
       randomAnimationTimer = dart_async.Timer(delay, () {
         final status = duckStatus ?? ref?.read(duckStatusProvider!);
+        debugPrint(
+            '[DuckGame] Timer de animação aleatória ativado - isDead: ${status?.isDead}');
         if (status != null &&
             !status.isDead &&
             _isLoaded &&
             duckSprite != null) {
           duckSprite!.playRandomAnimation();
         }
-        // Agenda a próxima animação aleatória
+        // Agenda a próxima animação aleatória APENAS se o pato estiver vivo
         if (status != null && !status.isDead) {
           scheduleNextAnimation();
+        } else {
+          debugPrint(
+              '[DuckGame] Timer de animação aleatória parado - pato morto');
         }
       });
     }
 
-    scheduleNextAnimation();
+    // Só inicia o timer se o pato estiver vivo
+    final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+    if (currentStatus != null && !currentStatus.isDead) {
+      debugPrint('[DuckGame] Iniciando timer de animações aleatórias');
+      scheduleNextAnimation();
+    } else {
+      debugPrint('[DuckGame] Não iniciando timer - pato morto');
+    }
   }
 
   // Métodos de animação para serem chamados externamente
   void playFeedAnimation() {
     if (_isLoaded && duckSprite != null) {
       final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      debugPrint(
+          '[DuckGame] playFeedAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
         duckSprite!.playAnimation('run');
       }
@@ -91,6 +107,8 @@ class DuckGame extends FlameGame {
   void playCleanAnimation() {
     if (_isLoaded && duckSprite != null) {
       final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      debugPrint(
+          '[DuckGame] playCleanAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
         duckSprite!.playAnimation('run');
       }
@@ -100,6 +118,8 @@ class DuckGame extends FlameGame {
   void playPlayAnimation() {
     if (_isLoaded && duckSprite != null) {
       final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      debugPrint(
+          '[DuckGame] playPlayAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
         duckSprite!.playAnimation('run');
       }
@@ -121,8 +141,14 @@ class DuckGame extends FlameGame {
 
   void forceReviveAnimation() {
     if (_isLoaded && duckSprite != null) {
-      // Atualiza o status primeiro para garantir sincronização
-      updateSpriteStatus();
+      // CRÍTICO: Atualiza o status ANTES de qualquer coisa
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null) {
+        duckSprite!.updateStatusReference(currentStatus);
+        debugPrint(
+            '[DuckGame] Status atualizado para revive: isDead=${currentStatus.isDead}');
+      }
+
       duckSprite!.playAnimation('fly', force: true);
     }
     startRandomAnimationTimer();
@@ -130,6 +156,13 @@ class DuckGame extends FlameGame {
 
   void playTalkAnimation() {
     if (_isLoaded && duckSprite != null) {
+      // Atualiza o status antes de tocar a animação talk
+      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      if (currentStatus != null) {
+        duckSprite!.updateStatusReference(currentStatus);
+        debugPrint(
+            '[DuckGame] Status atualizado para talk: isDead=${currentStatus.isDead}');
+      }
       duckSprite!.playAnimation('talk', force: true);
     }
   }
@@ -148,10 +181,20 @@ class DuckGame extends FlameGame {
         // Atualiza a referência do status no sprite
         duckSprite!.updateStatusReference(currentStatus);
         duckSprite!.updateAnimationBasedOnStatus();
+        debugPrint(
+            '[DuckGame] Status atualizado: isDead=${currentStatus.isDead}');
 
         // Se o pato acabou de reviver, reinicia o timer de animações aleatórias
-        if (!currentStatus.isDead && (randomAnimationTimer?.isActive != true)) {
-          startRandomAnimationTimer();
+        if (!currentStatus.isDead) {
+          if (randomAnimationTimer?.isActive != true) {
+            debugPrint(
+                '[DuckGame] Reiniciando timer de animações após ressurreição');
+            startRandomAnimationTimer();
+          }
+        } else {
+          // Se o pato morreu, cancela o timer
+          randomAnimationTimer?.cancel();
+          debugPrint('[DuckGame] Timer cancelado - pato morreu');
         }
       }
     }
@@ -323,9 +366,15 @@ class DuckSprite extends SpriteAnimationComponent
           duckStatus = currentStatus;
         }
 
+        // Debug para verificar o status no final da animação talk
+        debugPrint(
+            '[DuckSprite] Animação talk terminou, status atual: isDead=${currentStatus?.isDead}');
+
         if (currentStatus?.isDead == true) {
+          debugPrint('[DuckSprite] Indo para animação dead');
           playAnimation('dead', force: true);
         } else {
+          debugPrint('[DuckSprite] Indo para animação idle');
           playAnimation('idle', force: true);
         }
       };

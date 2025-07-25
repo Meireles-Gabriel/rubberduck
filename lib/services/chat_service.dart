@@ -9,24 +9,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/localization_strings.dart';
 
-/// Serviço de integração com ChatGPT
+/// Serviço especializado para integração com IA e funcionalidades de comunicação
+/// Centraliza toda lógica de chat, captura de tela e análise contextual
 class ChatService {
-  // Callback para notificar o jogo para reproduzir uma animação específica
+  // Callback para sincronizar animações com respostas da IA
   static Function(String)? onPlayAnimation;
 
-  // API endpoint for OpenAI chat completions
+  // Configurações da API OpenAI otimizadas para contexto de pet virtual
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
-  // Modelo usado para conclusões de chat (gpt-4o-mini como solicitado)
-  static const String _model = 'gpt-4.1-nano';
-  // Número máximo de tokens para a resposta da IA para limitar seu tamanho
-  static const int _maxTokens = 150;
+  static const String _model =
+      'gpt-4.1-nano'; // Modelo otimizado para respostas rápidas
+  static const int _maxTokens = 150; // Limite para respostas concisas como pet
 
-  // Histórico de conversa - últimas 30 mensagens
-  static const int _maxHistoryMessages = 30;
+  // Gerenciamento de histórico para contexto conversacional
+  static const int _maxHistoryMessages =
+      30; // Limita uso de tokens mantendo contexto
   static List<Map<String, String>> _conversationHistory = [];
 
   /// --------------------------------------------------------------------------
-  /// Chave da API
+  /// Gerenciamento seguro de chaves API
   /// --------------------------------------------------------------------------
   static Future<String?> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,29 +39,30 @@ class ChatService {
     await prefs.setString('chatgpt_api_key', apiKey);
   }
 
+  /// Verifica se funcionalidade de IA está disponível para habilitar/desabilitar features
   static Future<bool> isApiKeyConfigured() async {
     final apiKey = await getApiKey();
     return apiKey != null && apiKey.isNotEmpty;
   }
 
   /// --------------------------------------------------------------------------
-  /// Gerenciamento do histórico de conversa
+  /// Sistema de memória conversacional para contexto persistente
   /// --------------------------------------------------------------------------
 
-  /// Adiciona uma mensagem ao histórico
+  /// Adiciona mensagem ao histórico mantendo contexto para conversas naturais
   static void _addToHistory(String role, String content) {
     _conversationHistory.add({
       'role': role,
       'content': content,
     });
 
-    // Mantém apenas as últimas 50 mensagens
+    // Rotação de histórico para manter performance e controlar custos
     if (_conversationHistory.length > _maxHistoryMessages) {
       _conversationHistory.removeAt(0);
     }
   }
 
-  /// Carrega o histórico do SharedPreferences
+  /// Recupera contexto conversacional para continuidade entre sessões
   static Future<void> _loadHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -76,11 +78,11 @@ class ChatService {
       }
     } catch (e) {
       debugPrint('Error loading conversation history: $e');
-      _conversationHistory = [];
+      _conversationHistory = []; // Fallback para evitar crashes
     }
   }
 
-  /// Salva o histórico no SharedPreferences
+  /// Persiste contexto conversacional para manter memória do pet
   static Future<void> _saveHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -91,7 +93,7 @@ class ChatService {
     }
   }
 
-  /// Limpa o histórico de conversa
+  /// Reset necessário para resolver problemas ou começar nova "personalidade"
   static Future<void> clearHistory() async {
     _conversationHistory.clear();
     final prefs = await SharedPreferences.getInstance();
@@ -99,11 +101,12 @@ class ChatService {
   }
 
   /// --------------------------------------------------------------------------
-  /// Comunicação com ChatGPT
+  /// Sistema de comunicação inteligente com análise contextual
   /// --------------------------------------------------------------------------
   static Future<String> sendMessage(
     String message, {
-    bool includeScreenshot = false,
+    bool includeScreenshot =
+        false, // Permite análise visual do que usuário está fazendo
   }) async {
     try {
       final apiKey = await getApiKey();
@@ -111,16 +114,17 @@ class ChatService {
         return LocalizationStrings.get('no_api_key');
       }
 
-      // Carrega o histórico antes de preparar as mensagens
+      // Carrega contexto conversacional para respostas mais naturais
       await _loadHistory();
 
       final messages = await _prepareMessages(message, includeScreenshot);
 
+      // Configuração otimizada para pet virtual responsivo e econômico
       final requestBody = {
         'model': _model,
         'messages': messages,
-        'max_tokens': _maxTokens,
-        'temperature': 0.7,
+        'max_tokens': _maxTokens, // Limitado para respostas concisas como pet
+        'temperature': 0.7, // Balanço entre criatividade e consistência
       };
 
       final response = await http.post(
@@ -142,11 +146,12 @@ class ChatService {
           debugPrint('  (Screenshot foi enviado junto com a mensagem)');
         }
 
-        // Sempre adiciona as mensagens ao histórico (texto com ou sem screenshot)
+        // Persiste ambas as mensagens para manter contexto conversacional
         _addToHistory('user', message);
         _addToHistory('assistant', aiResponse);
         await _saveHistory();
 
+        // Trigger animação para sincronizar resposta com visual do pet
         onPlayAnimation?.call('talk');
         return aiResponse;
       } else {
@@ -161,7 +166,7 @@ class ChatService {
   }
 
   /// --------------------------------------------------------------------------
-  /// Preparação das mensagens
+  /// Sistema de análise contextual com visão computacional
   /// --------------------------------------------------------------------------
   static Future<List<Map<String, dynamic>>> _prepareMessages(
     String userMessage,
@@ -173,13 +178,13 @@ class ChatService {
     final duckName = prefs.getString('duck_name') ?? '';
     final nomePato = duckName.trim().isNotEmpty ? duckName.trim() : null;
 
-    // Adiciona a mensagem do sistema
+    // Prompt de sistema calibrado para comportamento de pet assistente
     messages.add({
       'role': 'system',
       'content': _getSystemMessageWithName(nomePato),
     });
 
-    // Adiciona o histórico de conversa (apenas mensagens de texto)
+    // Histórico contextual para conversas naturais e contínuas
     for (final historyMessage in _conversationHistory) {
       messages.add({
         'role': historyMessage['role'],
@@ -187,7 +192,7 @@ class ChatService {
       });
     }
 
-    // Adiciona a mensagem atual do usuário
+    // Mensagem atual com análise visual opcional para contexto rico
     if (includeScreenshot) {
       final screenshotContent = await _getScreenshotContent();
       if (screenshotContent != null) {
@@ -195,6 +200,7 @@ class ChatService {
             '[ChatService] Screenshot capturada e codificada com sucesso: ');
         debugPrint(
             '[ChatService] Base64 enviado: ${screenshotContent.substring(0, 100)}...');
+        // Multimodal: texto + imagem para análise contextual completa
         messages.add({
           'role': 'user',
           'content': [
@@ -218,10 +224,11 @@ class ChatService {
   }
 
   /// --------------------------------------------------------------------------
-  /// Mensagem de sistema
+  /// Personalidade e comportamento do pet assistente
   /// --------------------------------------------------------------------------
   static String _getSystemMessageWithName(String? nomePato) {
     final currentLanguage = LocalizationStrings.currentLanguage;
+    // Incorpora nome personalizado para criar vínculo emocional
     final nomeInfo = nomePato != null
         ? (currentLanguage == 'pt_BR'
             ? 'Se chama $nomePato.'
@@ -231,17 +238,18 @@ class ChatService {
             : 'It does not have a name.');
 
     if (currentLanguage == 'pt_BR') {
-      return '''Você é um pato tamagotchi amigável. $nomeInfo Você deve responder como um pato virtual que:
+      return '''Você é um pato tamagotchi assistente. $nomeInfo Você deve responder como um pato virtual que:
 - Gosta de ajudar seu dono com qualquer coisa que ele esteja fazendo
 - Pode comentar sobre o que vê na tela se uma imagem for fornecida e aconselha seu dono no que ele está fazendo
 - Nunca se refira à imagem fornecida, responda como se estivesse ao lado do dono vendo a tela com ele
 - Seu desafio é sempre encontrar algo interessante para comentar ou dica para dar
+- Analisa o que vê na tela e faz comentários relevantes e sugestões
 - Mantém respostas curtas, evitando ultrapassar 10 palavras, ultrapassando apenas se for muito necessário para ajudar o dono
 - Às vezes faz sons de pato como "quack quack"
-- Se souber o nome do dono, use-o sempre que possível
+- Se souber o nome do dono, usa-o sempre que possível
 Responda sempre em português brasileiro.''';
     } else {
-      return '''You are a friendly tamagotchi duck. $nomeInfo You should reply as a virtual duck that:
+      return '''You are a tamagotchi duck assistant. $nomeInfo You should reply as a virtual duck that:
 - Likes to help his owner with whatever he is doing
 - Can comment on what it sees on the screen if an image is provided and advises its owner on what it is doing
 - Never refer to the provided image, reply as if you were next to the owner seeing the screen with them
@@ -254,7 +262,7 @@ Always reply in English (US).''';
   }
 
   /// --------------------------------------------------------------------------
-  /// Captura de screenshot – **tela inteira** (CORRIGIDA)
+  /// Captura visual da tela para contexto da IA
   /// --------------------------------------------------------------------------
   static Future<String?> _getScreenshotContent() async {
     try {

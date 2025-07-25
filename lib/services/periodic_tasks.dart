@@ -7,22 +7,23 @@ import '../game/duck_status.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/localization_strings.dart';
 
-/// Gerenciador de tarefas periódicas
+/// Coordenador central de todas as operações automatizadas que mantêm o pet funcional
+/// Essencial para simular vida independente e interações proativas com o usuário
 class PeriodicTasksManager {
-  // Timers usados para gerenciar operações periódicas
-  Timer? _statusUpdateTimer; // Timer para atualizar o status do pato
-  Timer? _autoCommentTimer; // Timer para enviar comentários automáticos
-  Timer? _cleanupTimer; // Timer para executar tarefas de limpeza
+  // Timers para diferentes sistemas que precisam rodar independentemente
+  Timer? _statusUpdateTimer; // Atualização contínua das necessidades do pet
+  Timer? _autoCommentTimer; // Sistema de comunicação proativa do pet
+  Timer? _cleanupTimer; // Manutenção de arquivos temporários
 
-  // Flag para indicar se as tarefas estão pausadas devido à morte do pato
+  // Estado crítico para pausar sistemas quando pet está morto
   bool _isPausedDueToDeath = false;
 
-  // Callbacks para notificar componentes externos sobre eventos
-  Function(String)? onStatusUpdate; // Callback para atualizações de status
-  Function(String)? onAutoComment; // Callback para comentários automáticos
-  Function()? onDeathDetected; // Callback para detecção de morte
+  // Callbacks para integração com outros sistemas sem acoplamento direto
+  Function(String)? onStatusUpdate; // Notifica mudanças de humor/necessidades
+  Function(String)? onAutoComment; // Dispara mensagens automáticas
+  Function()? onDeathDetected; // Alerta sobre morte do pet
 
-  // Referência ao notifier do estado do pato (Riverpod)
+  // Referência para manipular estado do pet diretamente
   late DuckStatusNotifier duckStatusNotifier;
 
   /// Inicializa o gerenciador de tarefas periódicas com o notifier do pato fornecido.

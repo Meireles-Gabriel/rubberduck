@@ -1,8 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart'; // Added for debugPrint
+import 'package:flutter/foundation.dart'; // Para debugPrint em logs de desenvolvimento
 
-/// Sistema de gerenciamento de status do pato
+/// Modelo imutável que representa o estado completo do pet virtual
+/// Centraliza todas as necessidades e informações vitais para facilitar gerenciamento
 class DuckStatus {
   final double hunger;
   final double cleanliness;
@@ -29,6 +30,8 @@ class DuckStatus {
         lastClean = lastClean ?? DateTime.now(),
         lastPlay = lastPlay ?? DateTime.now();
 
+  /// Método copyWith necessário para Riverpod - permite atualizações imutáveis
+  /// Essencial para notificar listeners de mudanças de estado de forma eficiente
   DuckStatus copyWith({
     double? hunger,
     double? cleanliness,
@@ -53,13 +56,20 @@ class DuckStatus {
     );
   }
 
-  static const double hungerDecayRate = 1000.0;
-  static const double cleanlinessDecayRate = 500.0;
-  static const double happinessDecayRate = 700.0;
-  static const double deathThreshold = 5.0;
+  // Valores calibrados para simular necessidades realistas de um pet virtual
+  static const double hungerDecayRate =
+      1000.0; // Fome decai rapidamente para manter engajamento
+  static const double cleanlinessDecayRate =
+      500.0; // Higiene decai moderadamente
+  static const double happinessDecayRate =
+      700.0; // Felicidade precisa de atenção regular
+  static const double deathThreshold =
+      5.0; // Limiar baixo para evitar morte acidental
 
+  /// Indica quando o pet precisa de atenção urgente para evitar negligência
   bool get needsAttention => hunger < 30 || cleanliness < 30 || happiness < 30;
 
+  /// Determina humor baseado na média dos stats para feedback visual/textual
   String getMood() {
     if (isDead) return 'dead';
     final averageStatus = (hunger + cleanliness + happiness) / 3;
@@ -69,6 +79,7 @@ class DuckStatus {
     return 'critical';
   }
 
+  /// Fornece percentuais para barras de progresso e indicadores visuais
   Map<String, double> getStatusPercentages() {
     return {
       'hunger': hunger,
@@ -77,7 +88,7 @@ class DuckStatus {
     };
   }
 
-  // Métodos de serialização para persistência
+  // Serialização necessária para persistir estado entre sessões do aplicativo
   Map<String, dynamic> toMap() => {
         'hunger': hunger,
         'cleanliness': cleanliness,
@@ -90,6 +101,7 @@ class DuckStatus {
         'deathCause': deathCause,
       };
 
+  /// Desserialização com valores padrão para evitar crashes em dados corrompidos
   static DuckStatus fromMap(Map<String, dynamic> map) {
     return DuckStatus(
       hunger: map['hunger'] ?? 50.0,
@@ -109,9 +121,12 @@ class DuckStatus {
   }
 }
 
+/// Gerenciador de estado reativo que notifica mudanças automaticamente
+/// Riverpod StateNotifier essencial para sincronizar UI com dados do pet
 class DuckStatusNotifier extends StateNotifier<DuckStatus> {
   DuckStatusNotifier() : super(DuckStatus());
 
+  /// Carrega estado persistido para manter continuidade entre sessões
   Future<void> loadFromPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final map = {
@@ -130,6 +145,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
       'deathCause': prefs.getString('deathCause'),
     };
 
+    // Logs detalhados para debugging de problemas de persistência e carregamento
     debugPrint('[DuckStatus] Carregado do SharedPreferences:');
     debugPrint('  Hunger: ${map['hunger']}');
     debugPrint('  Cleanliness: ${map['cleanliness']}');
@@ -146,10 +162,11 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     debugPrint('  deathCause: ${map['deathCause']}');
 
     state = DuckStatus.fromMap(map);
-    // Verifica imediatamente as necessidades e se o pato deve estar morto
+    // Atualização imediata necessária para aplicar decay de tempo ausente
     updateStatus();
   }
 
+  /// Persiste estado atual para manter dados entre sessões
   Future<void> saveToPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('hunger', state.hunger);
@@ -165,8 +182,9 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     }
   }
 
+  /// Aumenta fome e registra timestamp para cálculos de decay
   void feed() {
-    if (state.isDead) return;
+    if (state.isDead) return; // Pet morto não pode ser alimentado
     state = state.copyWith(
       hunger: (state.hunger + 50.0).clamp(0.0, 100.0),
       lastFeed: DateTime.now(),
@@ -174,6 +192,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     saveToPreferences();
   }
 
+  /// Melhora higiene e atualiza timestamp para tracking de necessidades
   void clean() {
     if (state.isDead) return;
     state = state.copyWith(
@@ -183,6 +202,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     saveToPreferences();
   }
 
+  /// Aumenta felicidade através de interação e brincadeira
   void play() {
     if (state.isDead) return;
     state = state.copyWith(
@@ -192,6 +212,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     saveToPreferences();
   }
 
+  /// Ressuscita o pet resetando completamente o estado para novo começo
   void revive() {
     final wasDeadBefore = state.isDead;
     state = DuckStatus();
@@ -202,7 +223,7 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     }
   }
 
-  // Atualização baseada no tempo decorrido
+  /// Aplica degradação natural baseada no tempo para simular necessidades realistas
   void updateStatus() {
     if (state.isDead) return;
     final now = DateTime.now();
@@ -227,13 +248,13 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
       );
       saveToPreferences();
     }
-    // Lógica de morte automática
+    // Sistema de morte realista que considera tempo + valores baixos para criar consequências
     final deathThreshold = DuckStatus.deathThreshold;
     final nowDT = DateTime.now();
     final durationSinceFeed = nowDT.difference(state.lastFeed);
     final durationSinceClean = nowDT.difference(state.lastClean);
     final durationSincePlay = nowDT.difference(state.lastPlay);
-    const deathHours = 1;
+    const deathHours = 1; // Tempo de tolerância curto para manter engajamento
     if (state.hunger <= deathThreshold &&
         durationSinceFeed.inHours >= deathHours) {
       state = state.copyWith(isDead: true, deathCause: 'hunger');
@@ -255,9 +276,12 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
   }
 }
 
+/// Provider global que disponibiliza o estado do pato para toda a aplicação
+/// Riverpod Provider essencial para injeção de dependência e gerenciamento reativo
 final duckStatusProvider =
     StateNotifierProvider<DuckStatusNotifier, DuckStatus>((ref) {
   final notifier = DuckStatusNotifier();
+  // Carregamento inicial automático para recuperar estado persistido
   notifier.loadFromPreferences();
   return notifier;
 });

@@ -8,76 +8,89 @@ import 'widgets/tamagotchi_widget.dart';
 import 'utils/localization_strings.dart';
 
 void main() async {
-  // Inicializa o binding do Flutter
+  // Necessário para garantir que todos os plugins nativos sejam inicializados antes de usar APIs do sistema
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa o gerenciador de janelas
+  // Necessário para permitir controle personalizado da janela (tamanho, posição, sempre no topo)
   await windowManager.ensureInitialized();
 
-  // Obtém o locale do sistema usando a API nativa do Flutter
+  // Detecta o idioma do sistema para oferecer uma experiência localizada automática
   final List<Locale> systemLocales = ui.PlatformDispatcher.instance.locales;
   final String systemLocale =
       systemLocales.isNotEmpty ? systemLocales.first.toString() : '';
 
-  // Define idioma padrão baseado no idioma do sistema
+  // Inglês como fallback para garantir que o app funcione mesmo em idiomas não suportados
   String defaultLanguage = 'en_US'; // Começa com en_US como fallback
 
-  // Verifica se o locale é português (pt_BR)
+  // Detecta português brasileiro para oferecer experiência nativa aos usuários brasileiros
   if (systemLocale.toLowerCase().contains('pt') ||
       systemLocale.toLowerCase().contains('portuguese')) {
     defaultLanguage = 'pt_BR';
   }
 
-  // Obtém a instância de shared preferences
+  // SharedPreferences para persistir configurações entre sessões e inicializações
   SharedPreferences prefs = await SharedPreferences.getInstance();
   if (!prefs.containsKey('language')) {
-    // Salva idioma padrão se não estiver definido
+    // Define idioma inicial apenas se não existir configuração prévia do usuário
     await prefs.setString('language', defaultLanguage);
   }
 
-  // Inicializa a localização
+  // Carrega strings localizadas antes de construir a UI para evitar textos em branco
   await LocalizationStrings.init();
 
-
-  // Configura propriedades da janela
+  // Configura janela pequena e sempre visível para simular comportamento de pet de desktop
   WindowOptions windowOptions = const WindowOptions(
-    size: Size(200, 250), // Tamanho da janela reduzido pela metade
-    center: false, // Não centralizar janela
-    backgroundColor: Colors.transparent, // Fundo transparente
-    skipTaskbar: true, // Esconder da barra de tarefas
-    titleBarStyle: TitleBarStyle.hidden, // Esconder barra de título
-    alwaysOnTop: true, // Sempre em primeiro plano
-    fullScreen: false, // Não em tela cheia
-    minimumSize: Size(175, 225), // Tamanho mínimo reduzido
-    maximumSize: Size(225, 275), // Tamanho máximo reduzido
+    size: Size(
+        200, 250), // Tamanho pequeno para não interferir no trabalho do usuário
+    center:
+        false, // Usuário pode posicionar onde preferir, não força centralização
+    backgroundColor:
+        Colors.transparent, // Permite janela com bordas arredondadas e sombra
+    skipTaskbar: true, // Comporta-se como overlay, não como aplicação normal
+    titleBarStyle:
+        TitleBarStyle.hidden, // Remove barra de título para visual limpo
+    alwaysOnTop: true, // Essencial para pet desktop - sempre visível
+    fullScreen: false, // Mantém tamanho pequeno, não deve dominar a tela
+    minimumSize: Size(175,
+        225), // Evita que seja redimensionada demais e perca funcionalidade
+    maximumSize: Size(
+        225, 275), // Limita crescimento para manter propósito de pet compacto
   );
 
-  // Aplica configuração da janela
+  // Aguarda configuração completa antes de mostrar para evitar janela malformada
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show(); // Mostra a janela
-    await windowManager.focus(); // Foca a janela
-    await windowManager.setAsFrameless(); // Remove moldura da janela
-    await windowManager.setSkipTaskbar(true); // Pular barra de tarefas
-    await windowManager.setAlwaysOnTop(true); // Sempre em primeiro plano
+    await windowManager.show(); // Torna janela visível após configuração
+    await windowManager.focus(); // Chama atenção inicial do usuário
+    await windowManager
+        .setAsFrameless(); // Remove bordas do sistema para design personalizado
+    await windowManager
+        .setSkipTaskbar(true); // Reforça comportamento de overlay
+    await windowManager.setAlwaysOnTop(true); // Reforça visibilidade constante
   });
 
-  // Executa a aplicação
+  // Riverpod necessário para gerenciamento de estado reativo entre componentes
   runApp(ProviderScope(child: const TamagotchiDuckApp()));
 
-  // Configura janela bitsdojo
+  // BitsDojo oferece controle adicional de janela que window_manager não fornece
   doWhenWindowReady(() {
-    final win = appWindow; // Obtém a instância da janela do aplicativo
-    const initialSize = Size(200, 250); // Tamanho inicial da janela
-    win.minSize = const Size(175, 225); // Tamanho mínimo da janela
-    win.maxSize = const Size(225, 275); // Tamanho máximo da janela
-    win.size = initialSize; // Define o tamanho inicial
-    win.alignment = Alignment.topRight; // Alinha a janela ao centro
-    win.title = "Tamagotchi Duck"; // Define o título da janela
-    win.show(); // Mostra a janela bitsdojo
+    final win =
+        appWindow; // Acesso direto à janela para configurações avançadas
+    const initialSize =
+        Size(200, 250); // Mantém consistência com window_manager
+    win.minSize =
+        const Size(175, 225); // Evita quebra de layout em tamanhos pequenos
+    win.maxSize =
+        const Size(225, 275); // Mantém foco no conceito de pet compacto
+    win.size = initialSize; // Aplica tamanho padrão
+    win.alignment =
+        Alignment.topRight; // Posição padrão que não interfere no trabalho
+    win.title = "Tamagotchi Duck"; // Título para identificação do processo
+    win.show(); // Confirma visibilidade com BitsDojo
   });
 }
 
-/// Widget principal da aplicação
+/// Aplicação principal que gerencia o tema e a estrutura visual geral
+/// Necessária para configurar o MaterialApp com tema personalizado que suporte transparência
 class TamagotchiDuckApp extends StatefulWidget {
   const TamagotchiDuckApp({super.key});
 
@@ -85,76 +98,82 @@ class TamagotchiDuckApp extends StatefulWidget {
   State<TamagotchiDuckApp> createState() => _TamagotchiDuckAppState();
 }
 
+/// State que monitora mudanças de locale do sistema para atualização automática do idioma
 class _TamagotchiDuckAppState extends State<TamagotchiDuckApp>
     with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // Observer necessário para detectar mudanças de idioma do sistema em tempo real
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    // Remove observer para evitar vazamentos de memória
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeLocales(List<Locale>? locales) {
+    // Reconstrói interface quando usuário muda idioma do sistema
     setState(() {}); // Rebuild when system locale changes
   }
 
   @override
   Widget build(BuildContext context) {
-    // Retorna o widget MaterialApp
     return MaterialApp(
-      title: 'Tamagotchi Duck', // Título da aplicação
-      debugShowCheckedModeBanner: false, // Esconder banner de debug
-      // Define o tema da aplicação
+      title:
+          'Tamagotchi Duck', // Título para identificação nos processos do sistema
+      debugShowCheckedModeBanner:
+          false, // Remove banner debug para visual limpo em produção
+      // Tema configurado para suportar transparência e estética de pet desktop
       theme: ThemeData(
-        // Define o esquema de cores
+        // Esquema de cores azuis para transmitir calma e diversão
         colorScheme:
             ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
           secondary: Colors.blueAccent,
         ),
-        // Tema customizado para o widget
+        // Fundo transparente essencial para efeito de janela flutuante
         scaffoldBackgroundColor:
             Colors.transparent, // Fundo transparente do scaffold
-        // Tema do diálogo
+        // Diálogos semi-transparentes para manter consistência visual
         dialogTheme: DialogThemeData(
             backgroundColor: Colors.white.withValues(alpha: 0.95)),
-        // Tema do cartão
+        // Cards semi-transparentes para elementos de UI
         cardTheme: CardThemeData(color: Colors.white.withValues(alpha: 0.9)),
-        // Tema do texto
+        // Texto escuro para legibilidade em fundos claros
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(
-              color: Colors.black87), // Estilo de texto médio do corpo
-          bodySmall: TextStyle(
-              color: Colors.black54), // Estilo de texto pequeno do corpo
+          bodyMedium:
+              TextStyle(color: Colors.black87), // Texto principal legível
+          bodySmall: TextStyle(color: Colors.black54), // Texto secundário suave
         ),
       ),
-      home: const TamagotchiWidget(), // Main widget / Widget principal
-      // Builder for custom app container / Construtor para container customizado do aplicativo
+      home:
+          const TamagotchiWidget(), // Widget principal que contém toda a lógica do pet
+      // Builder customizado para criar container com bordas arredondadas e sombra
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
-            // Rounded corners / Cantos arredondados
+            // Bordas arredondadas para aparência moderna e amigável
             borderRadius: BorderRadius.circular(15),
-            // Semi-transparent background / Fundo semi-transparente
+            // Fundo semi-transparente para visibilidade sem obstrução total
             color: Colors.white.withValues(alpha: 0.95),
-            // Shadow effect / Efeito de sombra
+            // Sombra para destacar janela do fundo e dar profundidade
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2), // Cor da sombra
-                blurRadius: 10, // Raio do desfoque
-                offset: const Offset(0, 5), // Deslocamento da sombra
+                color: Colors.black.withValues(alpha: 0.2), // Sombra suave
+                blurRadius: 10, // Desfoque para efeito natural
+                offset: const Offset(0, 5), // Posicionamento da sombra
               ),
             ],
           ),
           child: ClipRRect(
-            // Widget para cortar retângulo
-            borderRadius: BorderRadius.circular(15), // Raio da borda para corte
-            child: child, // Widget filho
+            // Corta conteúdo nas bordas arredondadas para evitar overflow
+            borderRadius:
+                BorderRadius.circular(15), // Mantém consistência com container
+            child: child, // Widget filho (TamagotchiWidget)
           ),
         );
       },

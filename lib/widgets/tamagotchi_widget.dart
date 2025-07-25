@@ -12,10 +12,12 @@ import 'settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flame_audio/flame_audio.dart';
 
-/// Widget principal do tamagotchi
+/// Widget principal que orquestra toda a experiência do pet virtual
+/// Centraliza todas as interações, animações e sistemas do tamagotchi
 class TamagotchiWidget extends ConsumerStatefulWidget {
   const TamagotchiWidget({super.key});
 
+  // Notifier global para nome personalizado do pet
   static final ValueNotifier<String> duckNameNotifier =
       ValueNotifier<String>('');
 
@@ -23,18 +25,19 @@ class TamagotchiWidget extends ConsumerStatefulWidget {
   ConsumerState<TamagotchiWidget> createState() => TamagotchiWidgetState();
 }
 
+/// State principal que gerencia todo o ciclo de vida e interações do pet
 class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     with TickerProviderStateMixin {
-  // Objetos relacionados ao jogo e status
+  // Componentes essenciais do sistema de pet virtual
   late DuckGame duckGame;
   late PeriodicTasksManager periodicTasks;
-  bool _isInitialized = false;
-  bool _talkAnimationPlayed = false;
+  bool _isInitialized = false; // Previne operações em estado não inicializado
+  bool _talkAnimationPlayed = false; // Controla animações de fala
 
-  // Controladores para entrada de texto e captura de tela
+  // Interface de chat para comunicação com IA
   final TextEditingController _chatController = TextEditingController();
 
-  // Variáveis de estado para elementos da UI
+  // Estados da interface para controle de interações visuais
   String _currentBubbleMessage = '';
   bool _isBubbleVisible = false;
   bool _isChatLoading = false;
@@ -42,11 +45,11 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
   bool _isDraggingClean = false;
   bool _isDraggingPlay = false;
 
-  // Controladores de animação para mensagem de balão
+  // Sistema de animação para balões de fala suaves
   late AnimationController _bubbleAnimationController;
   late Animation<double> _bubbleAnimation;
 
-  // Timer para controlar a duração do balão
+  // Timer para controle automático de duração de mensagens
   Timer? _bubbleTimer;
 
   ValueNotifier<String> get duckNameNotifier =>
@@ -306,9 +309,13 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
         if (animationOverride == 'dead') {
           duckGame.forceDeadAnimation();
         } else if (animationOverride != 'run' && !_talkAnimationPlayed) {
-          // Só toca animação talk se não for uma ação de cuidado
-          duckGame.playTalkAnimation();
-          _talkAnimationPlayed = true;
+          // Verifica se o pato está vivo antes de tocar animação talk
+          final currentStatus = ref.read(duckStatusProvider);
+          if (!currentStatus.isDead) {
+            // Só toca animação talk se não for uma ação de cuidado E o pato estiver vivo
+            duckGame.playTalkAnimation();
+            _talkAnimationPlayed = true;
+          }
         }
       }
       setState(() {
@@ -374,18 +381,30 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
     switch (action) {
       case 'feed':
         notifier.feed();
+        // Força atualização do status no jogo antes da animação
+        if (duckGame.hasLoaded) {
+          duckGame.updateSpriteStatus();
+        }
         duckGame.playFeedAnimation();
         _showBubbleMessage(LocalizationStrings.get('fed_message'),
             animationOverride: 'run');
         break;
       case 'clean':
         notifier.clean();
+        // Força atualização do status no jogo antes da animação
+        if (duckGame.hasLoaded) {
+          duckGame.updateSpriteStatus();
+        }
         duckGame.playCleanAnimation();
         _showBubbleMessage(LocalizationStrings.get('cleaned_message'),
             animationOverride: 'run');
         break;
       case 'play':
         notifier.play();
+        // Força atualização do status no jogo antes da animação
+        if (duckGame.hasLoaded) {
+          duckGame.updateSpriteStatus();
+        }
         duckGame.playPlayAnimation();
         _showBubbleMessage(LocalizationStrings.get('played_message'),
             animationOverride: 'run');
@@ -868,8 +887,12 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
                 duckGame.forceReviveAnimation();
               }
               setState(() {
-                // Aguarda a animação 'fly' terminar antes de mostrar a mensagem
-                Future.delayed(const Duration(milliseconds: 1000), () {
+                // Aguarda mais tempo para garantir que o status seja atualizado
+                Future.delayed(const Duration(milliseconds: 1500), () {
+                  // Força uma atualização do status antes de mostrar a mensagem
+                  if (duckGame.hasLoaded) {
+                    duckGame.forceStatusUpdate();
+                  }
                   _showBubbleMessage(LocalizationStrings.get('happy'));
                 });
               });

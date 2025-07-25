@@ -2,116 +2,118 @@ import 'package:flutter/material.dart';
 import '../utils/localization_strings.dart';
 import '../game/duck_status.dart';
 
-/// Sistema de morte e ressurreição para o pato
+/// Sistema crítico para manter engajamento do usuário através de consequências e recuperação
+/// Morte cria urgência e valor emocional; ressurreição oferece segunda chance sem perda permanente
 class DeathRevivalSystem {
-  /// Exibe um diálogo ao usuário indicando a morte do pato e oferecendo uma opção de renascimento.
+  /// Confronta o usuário com consequências de negligência para ensinar responsabilidade
+  /// Dialog modal força reconhecimento da situação e decisão consciente de reviver
   static Future<void> showDeathDialog(
-    BuildContext context, // O contexto de construção para exibir o diálogo
-    DuckStatus duckStatus, // O status atual do pato, incluindo a causa da morte
+    BuildContext
+        context, // Contexto necessário para overlay modal sobre a aplicação
+    DuckStatus
+        duckStatus, // Estado atual para determinar causa específica da morte
     VoidCallback
-        onRevive, // Função de callback a ser executada quando o pato for revivido
+        onRevive, // Callback para coordenar ressurreição com outros sistemas
   ) async {
-    // Determina a mensagem de morte apropriada com base na causa da morte do pato.
+    // Mensagem específica por causa para educar sobre diferentes tipos de negligência
     String deathMessage;
     switch (duckStatus.deathCause) {
       case 'hunger':
         deathMessage = LocalizationStrings.get(
-            'died_hunger'); // Mensagem para morte por fome
+            'died_hunger'); // Ensina importância da alimentação regular
         break;
       case 'dirty':
         deathMessage = LocalizationStrings.get(
-            'died_dirty'); // Mensagem para morte por sujeira
+            'died_dirty'); // Enfatiza necessidade de higiene
         break;
       case 'sadness':
         deathMessage = LocalizationStrings.get(
-            'died_sadness'); // Mensagem para morte por tristeza
+            'died_sadness'); // Destaca importância da interação social
         break;
       default:
         deathMessage = LocalizationStrings.get(
-            'died_hunger'); // Mensagem de fallback padrão se a causa for desconhecida
+            'died_hunger'); // Fallback para evitar UI quebrada
     }
 
     await showDialog(
       context: context,
       barrierDismissible:
-          false, // Impede que o diálogo seja dispensado tocando fora
+          false, // Força decisão consciente - usuário deve enfrentar consequências
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
             LocalizationStrings.get(
-                'death_title'), // Título do diálogo de morte
+                'death_title'), // Título impactante para gerar resposta emocional
             style: const TextStyle(
-              fontSize: 24, // Tamanho da fonte para o título
-              fontWeight: FontWeight.bold, // Peso da fonte para o título
-              color: Colors.red, // Cor do título
+              fontSize: 24, // Tamanho grande para chamar atenção
+              fontWeight: FontWeight.bold, // Peso para dar seriedade
+              color: Colors.red, // Vermelho para transmitir urgência/perigo
             ),
           ),
           content: Column(
-            mainAxisSize: MainAxisSize.min, // Faz a coluna ocupar espaço mínimo
+            mainAxisSize: MainAxisSize.min, // Compacto para foco na mensagem
             children: [
-              // Ícone representando morte ou insatisfação
+              // Ícone visual para reforçar impacto emocional da morte
               const Icon(
                 Icons.sentiment_very_dissatisfied,
-                size: 80, // Tamanho do ícone
-                color: Colors.red, // Cor do ícone
+                size: 80, // Grande para impacto visual
+                color: Colors.red, // Cor consistente com gravidade
               ),
-              const SizedBox(height: 16), // Espaçador
-              // Exibe a mensagem específica de morte
+              const SizedBox(height: 16), // Espaçamento para respiração visual
+              // Mensagem específica para educar sobre causa da morte
               Text(
                 deathMessage,
                 style: const TextStyle(
-                  fontSize: 18, // Tamanho da fonte para a mensagem de morte
-                  fontWeight:
-                      FontWeight.w500, // Peso da fonte para a mensagem de morte
+                  fontSize: 18, // Legível mas não competindo com título
+                  fontWeight: FontWeight.w500, // Peso médio para manter atenção
                 ),
-                textAlign: TextAlign.center, // Centraliza o texto
+                textAlign: TextAlign.center, // Centralizado para seriedade
               ),
-              const SizedBox(height: 16), // Espaçador
-              // Fornece uma explicação para a morte do pato com base na causa
+              const SizedBox(
+                  height: 16), // Separação entre mensagem e explicação
+              // Explicação educativa para prevenir repetição do problema
               Text(
-                _getDeathExplanation(
-                    duckStatus.deathCause), // Texto de explicação
+                _getDeathExplanation(duckStatus
+                    .deathCause), // Educação sobre cuidados necessários
                 style: const TextStyle(
-                  fontSize: 14, // Tamanho da fonte para a explicação
-                  color: Colors.grey, // Cor do texto da explicação
+                  fontSize: 14, // Menor para informação secundária
+                  color: Colors.grey, // Cor suave para não competir
                 ),
-                textAlign: TextAlign.center, // Centraliza o texto
+                textAlign: TextAlign.center, // Consistência visual
               ),
             ],
           ),
           actions: [
-            // Botão para reviver o pato
+            // Botão único para reviver - sem opção de desistir para manter engajamento
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-                onRevive(); // Executa o callback de renascimento
+                Navigator.of(context).pop(); // Remove modal da tela
+                onRevive(); // Dispara sistemas de ressurreição
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, // Cor de fundo do botão
-                foregroundColor: Colors.white, // Cor do texto do botão
+                backgroundColor: Colors.green, // Verde para esperança/vida
+                foregroundColor: Colors.white, // Contraste para legibilidade
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24,
-                    vertical:
-                        12), // Preenchimento ao redor do conteúdo do botão
+                    vertical: 12), // Padding generoso para facilitar clique
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(
-                      8), // Cantos arredondados para o botão
+                      8), // Bordas suaves para amigabilidade
                 ),
               ),
               child: Row(
-                mainAxisSize:
-                    MainAxisSize.min, // Faz a linha ocupar espaço mínimo
+                mainAxisSize: MainAxisSize.min, // Compacto para centralização
                 children: [
                   const Icon(Icons.favorite,
-                      size: 18), // Ícone de coração para renascimento
-                  const SizedBox(width: 8), // Espaçador
+                      size: 18), // Coração simboliza amor/cuidado necessário
+                  const SizedBox(width: 8), // Espaçamento entre ícone e texto
                   Text(
                     LocalizationStrings.get(
-                        'revive'), // Texto para o botão reviver
+                        'revive'), // Texto direto para ação clara
                     style: const TextStyle(
-                      fontSize: 16, // Tamanho da fonte para o texto do botão
-                      fontWeight: FontWeight
-                          .bold, // Peso da fonte para o texto do botão
+                      fontSize: 16, // Tamanho confortável para leitura
+                      fontWeight:
+                          FontWeight.bold, // Peso para destacar ação principal
                     ),
                   ),
                 ],
@@ -123,7 +125,7 @@ class DeathRevivalSystem {
     );
   }
 
-  /// Fornece uma explicação localizada para a morte do pato com base na causa fornecida.
+  /// Fornece explicação educativa para prevenir repetição da negligência
   static String _getDeathExplanation(String? cause) {
     switch (cause) {
       case 'hunger':
@@ -139,29 +141,29 @@ class DeathRevivalSystem {
 
   /// Exibe uma animação para representar visualmente o processo de renascimento do pato.
   static Future<void> showRevivalAnimation(
-    BuildContext context, // O contexto de construção para exibir o diálogo
+    BuildContext context, // Contexto para modal de animação
     VoidCallback
-        onAnimationComplete, // Callback executado após o término da animação de renascimento
+        onAnimationComplete, // Callback para sincronizar com outros sistemas
   ) async {
     await showDialog(
       context: context,
       barrierDismissible:
-          false, // Impede o fechamento até a conclusão da animação
+          false, // Força conclusão da animação para experiência completa
       builder: (BuildContext context) {
-        return const _RevivalAnimationDialog(); // O widget de diálogo contendo a animação de renascimento
+        return const _RevivalAnimationDialog(); // Widget especializado para animação
       },
     );
 
-    // Chama o callback de conclusão assim que o diálogo é dispensado (animação é considerada completa)
+    // Callback executado após animação para coordenar próximos passos
     onAnimationComplete();
   }
 
-  /// Verifica se um aviso de morte deve ser exibido ao usuário com base no status do pato.
+  /// Detecta situações críticas para alertar usuário antes da morte
   static bool shouldShowDeathWarning(DuckStatus duckStatus) {
-    final now = DateTime.now(); // Hora atual
-    const warningThreshold = 20 * 60 * 60 * 1000; // 20 horas em milissegundos
+    final now = DateTime.now(); // Timestamp para cálculos de tempo
+    const warningThreshold = 20 * 60 * 60 * 1000; // 20 horas - prazo crítico
 
-    // Verifica se os níveis de fome, higiene ou felicidade estão baixos e atrasados para atenção
+    // Sistema de alerta precoce para evitar mortes acidentais
     return (now.difference(duckStatus.lastFeed).inMilliseconds >
                 warningThreshold &&
             duckStatus.hunger < 20) ||
@@ -173,12 +175,12 @@ class DeathRevivalSystem {
             duckStatus.happiness < 20);
   }
 
-  /// Exibe um diálogo de aviso urgente ao usuário se o pato estiver próximo da morte devido à negligência.
+  /// Exibe aviso urgente para prevenir morte iminente do pet
   static Future<void> showDeathWarning(
       BuildContext context, DuckStatus duckStatus) async {
-    String warningMessage; // Mensagem a ser exibida no diálogo de aviso
+    String warningMessage; // Mensagem específica para cada tipo de negligência
 
-    // Determina a mensagem de aviso específica com base em qual necessidade é crítica
+    // Identifica necessidade mais crítica para alerta direcionado
     if (duckStatus.hunger < 20) {
       warningMessage = LocalizationStrings.get('warning_hunger');
     } else if (duckStatus.cleanliness < 20) {
@@ -193,42 +195,41 @@ class DeathRevivalSystem {
         return AlertDialog(
           title: Text(
             LocalizationStrings.get(
-                'warning_title'), // Título do diálogo de aviso
+                'warning_title'), // Título de alerta para chamar atenção
             style: const TextStyle(
-              fontSize: 20, // Tamanho da fonte para o título do aviso
-              fontWeight:
-                  FontWeight.bold, // Peso da fonte para o título do aviso
-              color: Colors.orange, // Cor do título do aviso
+              fontSize: 20, // Menor que morte mas ainda proeminente
+              fontWeight: FontWeight.bold, // Bold para comunicar urgência
+              color: Colors
+                  .orange, // Laranja para aviso (não crítico como vermelho)
             ),
           ),
           content: Column(
-            mainAxisSize: MainAxisSize.min, // Faz a coluna ocupar espaço mínimo
+            mainAxisSize: MainAxisSize.min, // Compacto para foco
             children: [
               const Icon(
                 Icons.warning,
-                size: 60, // Tamanho do ícone de aviso
-                color: Colors.orange, // Cor do ícone de aviso
+                size: 60, // Menor que ícone de morte mas visível
+                color: Colors.orange, // Consistente com título
               ),
-              const SizedBox(height: 16), // Espaçador
+              const SizedBox(height: 16), // Espaçamento para legibilidade
               Text(
-                warningMessage, // A mensagem de aviso específica
-                style: const TextStyle(
-                    fontSize: 16), // Tamanho da fonte para a mensagem de aviso
-                textAlign: TextAlign.center, // Centraliza o texto
+                warningMessage, // Mensagem específica sobre necessidade crítica
+                style:
+                    const TextStyle(fontSize: 16), // Legível para ação rápida
+                textAlign: TextAlign.center, // Centralizado para seriedade
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context)
-                  .pop(), // Fecha o diálogo ao ser pressionado
+              onPressed: () =>
+                  Navigator.of(context).pop(), // Permite dispensar após leitura
               child: Text(
                 LocalizationStrings.get(
-                    'understand'), // Texto para o botão de entendimento
+                    'understand'), // Texto que confirma compreensão
                 style: const TextStyle(
-                  fontSize: 16, // Tamanho da fonte para o texto do botão
-                  fontWeight:
-                      FontWeight.bold, // Peso da fonte para o texto do botão
+                  fontSize: 16, // Tamanho confortável
+                  fontWeight: FontWeight.bold, // Bold para destacar ação
                 ),
               ),
             ),
@@ -239,54 +240,57 @@ class DeathRevivalSystem {
   }
 }
 
-/// Um StatefulWidget para gerenciar o estado do diálogo de animação de renascimento.
+/// Widget especializado para criar experiência visual marcante da ressurreição
+/// Animação complexa necessária para celebrar momento de renovação da vida
 class _RevivalAnimationDialog extends StatefulWidget {
-  const _RevivalAnimationDialog(); // Construtor
+  const _RevivalAnimationDialog(); // Construtor simples - toda lógica no State
 
   @override
   State<_RevivalAnimationDialog> createState() =>
-      _RevivalAnimationDialogState(); // Cria o estado para este widget
+      _RevivalAnimationDialogState(); // Delega gerenciamento de animação ao State
 }
 
-/// A classe State para _RevivalAnimationDialog, gerenciando o controlador de animação e a animação real.
+/// Gerenciador de animação complexa para cerimônia de ressurreição
+/// Múltiplas animações simultâneas criam experiência visual rica e memorável
 class _RevivalAnimationDialogState extends State<_RevivalAnimationDialog>
     with TickerProviderStateMixin {
   late AnimationController
-      _animationController; // Controla a progressão da animação
+      _animationController; // Controla timing de toda a sequência
   late Animation<double>
-      _scaleAnimation; // Define a transformação de escala da animação
-  late Animation<double> _rotationAnimation;
+      _scaleAnimation; // Efeito de crescimento para simbolizar vida
+  late Animation<double> _rotationAnimation; // Rotação para dinamismo visual
 
   @override
   void initState() {
     super.initState();
+    // Controller com duração calibrada para impacto emocional
     _animationController = AnimationController(
-      vsync: this, // O TickerProvider para o controlador de animação
-      duration: const Duration(seconds: 2), // Duração da animação
+      vsync: this, // TickerProvider para sincronização com frame rate
+      duration: const Duration(seconds: 2), // Duração que permite apreciação
     );
 
-    // Animação de escala
+    // Animação de escala com curva elástica para efeito de "nascimento"
     _scaleAnimation = Tween<double>(
       begin: 0.5,
       end: 1.2,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.elasticOut,
+      curve: Curves.elasticOut, // Curva que simula vida emergindo
     ));
 
-    // Animação de rotação
+    // Rotação sutil para adicionar movimento orgânico
     _rotationAnimation = Tween<double>(
       begin: 0.0,
       end: 2.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeInOut, // Suave para não marejar
     ));
 
-    // Inicia animação
+    // Inicia animação automaticamente para impacto imediato
     _animationController.forward();
 
-    // Fecha automaticamente após animação
+    // Auto-dismiss para não exigir interação durante momento emocional
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -300,6 +304,7 @@ class _RevivalAnimationDialogState extends State<_RevivalAnimationDialog>
 
   @override
   void dispose() {
+    // Cleanup essencial para evitar vazamentos de memória
     _animationController.dispose();
     super.dispose();
   }
@@ -307,25 +312,27 @@ class _RevivalAnimationDialogState extends State<_RevivalAnimationDialog>
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // Transparente para foco no conteúdo
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
           return Transform.scale(
-            scale: _scaleAnimation.value,
+            scale: _scaleAnimation.value, // Aplica animação de crescimento
             child: Transform.rotate(
-              angle: _rotationAnimation.value,
+              angle: _rotationAnimation.value, // Aplica rotação sutil
               child: Container(
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(100),
+                  color: Colors.white, // Fundo branco para pureza/renascimento
+                  borderRadius:
+                      BorderRadius.circular(100), // Circular para suavidade
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.5),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+                      color: Colors.green
+                          .withValues(alpha: 0.5), // Sombra verde para vida
+                      blurRadius: 20, // Blur suave para efeito místico
+                      spreadRadius: 5, // Spread para presença visual
                     ),
                   ],
                 ),
@@ -333,17 +340,18 @@ class _RevivalAnimationDialogState extends State<_RevivalAnimationDialog>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.favorite,
+                      Icons.favorite, // Coração simboliza amor/vida renovada
                       size: 80,
-                      color: Colors.green,
+                      color: Colors.green, // Verde para vida/saúde
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      LocalizationStrings.get('revive'),
+                      LocalizationStrings.get(
+                          'revive'), // Confirma ação de ressurreição
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        fontWeight: FontWeight.bold, // Bold para celebração
+                        color: Colors.green, // Consistente com tema de vida
                       ),
                     ),
                   ],
