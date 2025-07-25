@@ -58,11 +58,11 @@ class DuckStatus {
 
   // Valores calibrados para simular necessidades realistas de um pet virtual
   static const double hungerDecayRate =
-      1000.0; // Fome decai rapidamente para manter engajamento
+      10.0; // Fome decai rapidamente para manter engajamento
   static const double cleanlinessDecayRate =
-      500.0; // Higiene decai moderadamente
+      5.0; // Higiene decai moderadamente
   static const double happinessDecayRate =
-      700.0; // Felicidade precisa de atenção regular
+      7.0; // Felicidade precisa de atenção regular
   static const double deathThreshold =
       5.0; // Limiar baixo para evitar morte acidental
 
@@ -254,21 +254,22 @@ class DuckStatusNotifier extends StateNotifier<DuckStatus> {
     final durationSinceFeed = nowDT.difference(state.lastFeed);
     final durationSinceClean = nowDT.difference(state.lastClean);
     final durationSincePlay = nowDT.difference(state.lastPlay);
-    const deathHours = 1; // Tempo de tolerância curto para manter engajamento
+    const deathMinutes =
+        60 * 24; // Tempo de tolerância curto para manter engajamento (24 horas)
     if (state.hunger <= deathThreshold &&
-        durationSinceFeed.inHours >= deathHours) {
+        durationSinceFeed.inMinutes >= deathMinutes) {
       state = state.copyWith(isDead: true, deathCause: 'hunger');
       saveToPreferences();
       return;
     }
     if (state.cleanliness <= deathThreshold &&
-        durationSinceClean.inHours >= deathHours) {
+        durationSinceClean.inMinutes >= deathMinutes) {
       state = state.copyWith(isDead: true, deathCause: 'dirty');
       saveToPreferences();
       return;
     }
     if (state.happiness <= deathThreshold &&
-        durationSincePlay.inHours >= deathHours) {
+        durationSincePlay.inMinutes >= deathMinutes) {
       state = state.copyWith(isDead: true, deathCause: 'sadness');
       saveToPreferences();
       return;

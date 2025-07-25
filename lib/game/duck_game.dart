@@ -63,7 +63,8 @@ class DuckGame extends FlameGame {
     void scheduleNextAnimation() {
       final delay = Duration(seconds: Random().nextInt(20) + 10);
       randomAnimationTimer = dart_async.Timer(delay, () {
-        final status = duckStatus ?? ref?.read(duckStatusProvider!);
+        // Sempre lê do provider para ter status atualizado
+        final status = ref?.read(duckStatusProvider!);
         debugPrint(
             '[DuckGame] Timer de animação aleatória ativado - isDead: ${status?.isDead}');
         if (status != null &&
@@ -82,8 +83,8 @@ class DuckGame extends FlameGame {
       });
     }
 
-    // Só inicia o timer se o pato estiver vivo
-    final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+    // Sempre lê do provider para ter status atualizado
+    final currentStatus = ref?.read(duckStatusProvider!);
     if (currentStatus != null && !currentStatus.isDead) {
       debugPrint('[DuckGame] Iniciando timer de animações aleatórias');
       scheduleNextAnimation();
@@ -95,7 +96,7 @@ class DuckGame extends FlameGame {
   // Métodos de animação para serem chamados externamente
   void playFeedAnimation() {
     if (_isLoaded && duckSprite != null) {
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      final currentStatus = ref?.read(duckStatusProvider!);
       debugPrint(
           '[DuckGame] playFeedAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
@@ -106,7 +107,7 @@ class DuckGame extends FlameGame {
 
   void playCleanAnimation() {
     if (_isLoaded && duckSprite != null) {
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      final currentStatus = ref?.read(duckStatusProvider!);
       debugPrint(
           '[DuckGame] playCleanAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
@@ -117,7 +118,7 @@ class DuckGame extends FlameGame {
 
   void playPlayAnimation() {
     if (_isLoaded && duckSprite != null) {
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      final currentStatus = ref?.read(duckStatusProvider!);
       debugPrint(
           '[DuckGame] playPlayAnimation - isDead: ${currentStatus?.isDead}');
       if (currentStatus != null && !currentStatus.isDead) {
@@ -141,9 +142,11 @@ class DuckGame extends FlameGame {
 
   void forceReviveAnimation() {
     if (_isLoaded && duckSprite != null) {
-      // CRÍTICO: Atualiza o status ANTES de qualquer coisa
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      // CRÍTICO: Força uma leitura atualizada do provider
+      final currentStatus = ref?.read(duckStatusProvider!);
       if (currentStatus != null) {
+        // Atualiza tanto a referência local quanto a do sprite
+        duckStatus = currentStatus;
         duckSprite!.updateStatusReference(currentStatus);
         debugPrint(
             '[DuckGame] Status atualizado para revive: isDead=${currentStatus.isDead}');
@@ -151,14 +154,19 @@ class DuckGame extends FlameGame {
 
       duckSprite!.playAnimation('fly', force: true);
     }
-    startRandomAnimationTimer();
+    // Inicia timer apenas se o pato estiver realmente vivo
+    final finalStatus = ref?.read(duckStatusProvider!);
+    if (finalStatus != null && !finalStatus.isDead) {
+      startRandomAnimationTimer();
+    }
   }
 
   void playTalkAnimation() {
     if (_isLoaded && duckSprite != null) {
       // Atualiza o status antes de tocar a animação talk
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      final currentStatus = ref?.read(duckStatusProvider!);
       if (currentStatus != null) {
+        duckStatus = currentStatus;
         duckSprite!.updateStatusReference(currentStatus);
         debugPrint(
             '[DuckGame] Status atualizado para talk: isDead=${currentStatus.isDead}');
@@ -176,9 +184,11 @@ class DuckGame extends FlameGame {
   /// Atualiza o status do sprite quando o estado do pato muda
   void updateSpriteStatus() {
     if (_isLoaded && duckSprite != null) {
-      final currentStatus = duckStatus ?? ref?.read(duckStatusProvider!);
+      // Sempre lê do provider para ter o estado mais atual
+      final currentStatus = ref?.read(duckStatusProvider!);
       if (currentStatus != null) {
-        // Atualiza a referência do status no sprite
+        // Atualiza tanto a referência local quanto a do sprite
+        duckStatus = currentStatus;
         duckSprite!.updateStatusReference(currentStatus);
         duckSprite!.updateAnimationBasedOnStatus();
         debugPrint(

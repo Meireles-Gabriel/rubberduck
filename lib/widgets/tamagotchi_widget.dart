@@ -102,7 +102,11 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
       await ChatService.initializeHistory();
 
       // Inicializa jogo e vincula com status do pato
-      duckGame = DuckGame(duckStatus: ref.read(duckStatusProvider));
+      duckGame = DuckGame(
+        duckStatus: ref.read(duckStatusProvider),
+        duckStatusProvider: duckStatusProvider,
+        ref: ref,
+      );
 
       // Inicializa gerenciador de tarefas periódicas e vincula callbacks
       periodicTasks = PeriodicTasksManager();
@@ -880,20 +884,19 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
               // Retoma as tarefas periódicas imediatamente após reviver
               periodicTasks.resumeTasksAfterRevival();
 
-              if (duckGame.hasLoaded) {
-                // Atualiza o status do sprite imediatamente após reviver
-                duckGame.updateSpriteStatus();
-                // Executa a animação de revivificação
-                duckGame.forceReviveAnimation();
-              }
               setState(() {
-                // Aguarda mais tempo para garantir que o status seja atualizado
-                Future.delayed(const Duration(milliseconds: 1500), () {
-                  // Força uma atualização do status antes de mostrar a mensagem
+                // Aguarda um frame para garantir que o provider seja atualizado
+                Future.delayed(const Duration(milliseconds: 100), () {
                   if (duckGame.hasLoaded) {
-                    duckGame.forceStatusUpdate();
+                    // Executa a animação de revivificação
+                    duckGame.forceReviveAnimation();
+                    // Força uma atualização do status após a animação iniciar
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      if (duckGame.hasLoaded) {
+                        duckGame.forceStatusUpdate();
+                      }
+                    });
                   }
-                  _showBubbleMessage(LocalizationStrings.get('happy'));
                 });
               });
             },
