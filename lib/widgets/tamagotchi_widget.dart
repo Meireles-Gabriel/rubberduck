@@ -925,7 +925,7 @@ class TamagotchiWidgetState extends ConsumerState<TamagotchiWidget>
               child: TextField(
                 controller: _chatController,
                 enabled: !_isChatLoading,
-                maxLength: 50,
+                maxLength: 70,
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
                   hintText: LocalizationStrings.get('chat_placeholder'),

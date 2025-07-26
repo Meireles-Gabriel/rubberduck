@@ -44,17 +44,15 @@ class LocalizationStrings {
           'Digite aqui...', // Texto de placeholder para o campo de entrada do chat
 
       // Mensagens de status do pato
-      'hungry': 'Estou com fome!', // Mensagem do pato quando está com fome
-      'dirty': 'Preciso de um banho!', // Mensagem do pato quando está sujo
-      'sad': 'Estou entediado!', // Mensagem do pato quando está triste
-      'happy': 'Eba!', // Mensagem do pato quando está feliz
+      'hungry': 'Bateu uma fome por aqui!',
+      'dirty': 'Acho que está na hora de um banho.',
+      'sad': 'Tá meio parado por aqui, né?',
+      'happy': 'Curti esse momento!',
 
       // Mensagens relacionadas à morte
-      'died_hunger': 'Morri de fome... 😵', // Mensagem de morte por fome
-      'died_dirty':
-          'Morri por estar muito sujo... 😵', // Mensagem de morte por sujeira
-      'died_sadness':
-          'Morri de tristeza... 😵', // Mensagem de morte por tristeza
+      'died_hunger': 'Não rolou comida... acabei ficando pelo caminho.',
+      'died_dirty': 'Sujou demais, agora já era.',
+      'died_sadness': 'Faltou interação... ficou difícil continuar.',
       'revive': 'Reviver', // Texto para o botão reviver
 
       // Explicações de morte
@@ -82,9 +80,9 @@ class LocalizationStrings {
 
       // Strings relacionadas ao chat
       'no_api_key':
-          'Por favor, adicione sua chave API do ChatGPT nas configurações para conversar comigo!', // Mensagem quando a chave API está faltando
+          'Adicione sua chave API do ChatGPT nas configurações para conversar comigo!', // Mensagem quando a chave API está faltando
       'error_chat':
-          'Desculpe, não consegui responder agora.', // Mensagem de erro genérica do chat
+          'Desculpe, não consigo responder agora.', // Mensagem de erro genérica do chat
 
       // Strings de comentários automáticos
       'auto_comment_intro':
@@ -93,12 +91,9 @@ class LocalizationStrings {
           'Não consigo ver o que você está fazendo agora.', // Mensagem de erro para comentários automáticos
 
       // Mensagens de ações de cuidado do pato
-      'fed_message':
-          'Delícia! Obrigado por me alimentar!', // Mensagem após alimentar o pato
-      'cleaned_message':
-          'Ah, muito melhor! Estou limpo agora!', // Mensagem após limpar o pato
-      'played_message':
-          'Foi divertido! Eu amo brincar!', // Mensagem após brincar com o pato
+      'fed_message': 'Valeu pela força! Energia renovada.',
+      'cleaned_message': 'Pronto, agora sim. Dá até gosto!',
+      'played_message': 'Boa pausa! Rendeu uma animada por aqui.',
 
       // Mensagens de validação
       'message_too_long':
@@ -136,15 +131,15 @@ class LocalizationStrings {
       'chat_placeholder': 'Type here...',
 
       // Duck status messages
-      'hungry': 'I\'m hungry!',
-      'dirty': 'I need a bath!',
-      'sad': 'I\'m bored!',
-      'happy': 'Yay!',
+      'hungry': 'I\'m feeling hungry!',
+      'dirty': 'I think it\'s time for a bath.',
+      'sad': 'It\'s a bit quiet here, isn\'t it?',
+      'happy': 'I enjoyed this moment!',
 
       // Death-related messages
-      'died_hunger': 'I died of hunger... 😵',
-      'died_dirty': 'I died from being too dirty... 😵',
-      'died_sadness': 'I died of sadness... 😵',
+      'died_hunger': 'I got too hungry and couldn\'t go on.',
+      'died_dirty': 'I got too dirty and it was game over.',
+      'died_sadness': 'I got too sad and couldn\'t continue.',
       'revive': 'Revive',
 
       // Death explanations
@@ -169,16 +164,16 @@ class LocalizationStrings {
       // Chat related strings
       'no_api_key':
           'Please add your ChatGPT API key in settings to chat with me!',
-      'error_chat': 'Sorry, I couldn\'t answer right now.',
+      'error_chat': 'Sorry, I can\'t answer right now.',
 
       // Auto-comment strings
       'auto_comment_intro': 'Let me see what you\'re doing...',
       'auto_comment_error': 'I can\'t see what you\'re doing right now.',
 
       // Duck care action messages
-      'fed_message': 'Yummy! Thanks for feeding me!',
-      'cleaned_message': 'Ah, much better! I\'m clean now!',
-      'played_message': 'That was fun! I love to play!',
+      'fed_message': 'Thanks for the help! Feeling energized.',
+      'cleaned_message': 'All clean now, feels great!',
+      'played_message': 'Good break! Feeling lively now.', 
 
       // Validation messages
       'message_too_long': 'Message too long! Max 50 characters.',
