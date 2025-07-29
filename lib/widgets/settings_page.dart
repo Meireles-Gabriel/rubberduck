@@ -390,6 +390,47 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  /// Limpa o histórico de conversa diretamente
+  /// Essencial para resolver problemas de contexto ou começar nova "personalidade"
+  Future<void> _clearConversationHistory() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Limpa o histórico usando o método do ChatService
+      await ChatService.clearHistory();
+
+      // Feedback positivo para confirmar sucesso
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocalizationStrings.get('clear_history_success')),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error clearing conversation history: $e');
+
+      // Feedback de erro para debugging
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${LocalizationStrings.get('save_error')}$e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   /// Builds the action buttons section (Save and Close) in the settings page.
   ///
   /// Constrói a seção de botões de ação (Salvar e Fechar) na página de configurações.
@@ -430,6 +471,27 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     )
                   : Text(LocalizationStrings.get('save')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Clear conversation history button / Botão limpar histórico de conversa
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _clearConversationHistory,
+              icon: const Icon(Icons.delete_forever),
+              label: Text(LocalizationStrings.get('clear_history')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade400,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
             ),
           ],
         ),

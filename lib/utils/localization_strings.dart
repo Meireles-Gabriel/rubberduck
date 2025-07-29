@@ -116,6 +116,10 @@ class LocalizationStrings {
       'save_success': 'Configurações salvas com sucesso',
       'save_error': 'Erro ao salvar configurações: ',
       'exit_app': 'Sair do Aplicativo',
+      'clear_history': 'Limpar Histórico',
+      'clear_history_confirm':
+          'Tem certeza que deseja limpar todo o histórico de conversa?',
+      'clear_history_success': 'Histórico de conversa limpo com sucesso',
       'duck_name': 'Nome do Pato',
       'duck_name_hint': 'Digite o nome do seu pato',
       'duck_name_default': '',
@@ -173,7 +177,7 @@ class LocalizationStrings {
       // Duck care action messages
       'fed_message': 'Thanks for the help! Feeling energized.',
       'cleaned_message': 'All clean now, feels great!',
-      'played_message': 'Good break! Feeling lively now.', 
+      'played_message': 'Good break! Feeling lively now.',
 
       // Validation messages
       'message_too_long': 'Message too long! Max 50 characters.',
@@ -192,6 +196,10 @@ class LocalizationStrings {
       'save_success': 'Settings saved successfully',
       'save_error': 'Error saving settings: ',
       'exit_app': 'Exit Application',
+      'clear_history': 'Clear History',
+      'clear_history_confirm':
+          'Are you sure you want to clear all conversation history?',
+      'clear_history_success': 'Conversation history cleared successfully',
       'duck_name': 'Duck Name',
       'duck_name_hint': 'Enter your duck\'s name',
       'duck_name_default': '',
