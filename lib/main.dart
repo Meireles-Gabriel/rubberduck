@@ -83,8 +83,8 @@ void main() async {
         const Size(225, 275); // Mantém foco no conceito de pet compacto
     win.size = initialSize; // Aplica tamanho padrão
     win.alignment =
-        Alignment.topRight; // Posição padrão que não interfere no trabalho
-    win.title = "Tamagotchi Duck"; // Título para identificação do processo
+        Alignment.bottomRight; // Posição padrão que não interfere no trabalho
+    win.title = "RubberDuck"; // Título para identificação do processo
     win.show(); // Confirma visibilidade com BitsDojo
   });
 }
